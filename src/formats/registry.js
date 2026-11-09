@@ -16,4 +16,5 @@ const groups = {
  gis: 'shp geojson kml kmz gpkg gpx tif vrt csv'
 };
 const labels = Object.fromEntries(Object.entries(groups).flatMap(([category,list])=>list.split(' ').map(ext=>[ext,{ext,category}])));
+labels.csv={ext:'csv',category:'data'};labels.tsv={ext:'tsv',category:'data'};
 module.exports={groups,labels,extensions:Object.keys(labels),formatInfo:ext=>labels[String(ext||'').toLowerCase()]||null};
