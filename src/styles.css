@@ -53,3 +53,13 @@ body.navy-theme .hex-field,body.navy-theme .rgb-fields input{background:#101c2b;
 body.navy-theme .dropzone{background:#f28b7512}body.navy-theme .secondary,body.navy-theme .small-btn{background:#20354b;color:#f6f0e6}
 body.navy-theme .empty b{color:#f6f0e6}body.navy-theme .donut-preview-panel{background:#20354b;color:#f6f0e6}
 @media(max-width:900px){.color-studio{grid-template-columns:1fr}.appearance-hero{padding:20px}.palette-preview i{width:26px;height:56px}}
+
+.power-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin:0 0 30px}
+.tool-card{padding:19px;border:1px solid #14223818;border-radius:16px;background:var(--panel);display:flex;flex-direction:column;align-items:flex-start;gap:9px}
+.tool-card>b{font:700 14px Manrope;color:var(--navy)}.tool-card>p{font-size:11px;line-height:1.6;color:#788394;min-height:35px}
+.tool-icon{width:34px;height:34px;border-radius:10px;background:#f28b7525;color:#bd6657;display:grid;place-items:center;font-size:18px}
+.tool-actions{display:flex;gap:7px;flex-wrap:wrap}.tool-actions .secondary,.tool-card>.secondary{font-size:10px;padding:9px 11px}
+.tool-card select{border:1px solid #14223820;background:#f6f0e6;color:#142238;border-radius:8px;padding:9px;font-size:11px}
+.tool-status{font-size:10px;color:#718b7e;margin-top:4px}
+@media(max-width:760px){.power-tools{grid-template-columns:1fr}}
+body.navy-theme .tool-card{background:#17283b}body.navy-theme .tool-card>b{color:#f6f0e6}body.navy-theme .tool-card select{background:#101c2b;color:#f6f0e6}
