@@ -4,7 +4,9 @@ const fs = require('node:fs/promises');
 const { spawnSync } = require('node:child_process');
 const { convertFile, getFormats, engineStatus } = require('./converter');
 
-let win, overlay, hook, modifierDown=false, mouseDown=false;\nconst modifierCodes=process.platform==='darwin'?[56,3640]:[29,3613];\nconst isModifier=code=>modifierCodes.includes(code);
+let win, overlay, hook, modifierDown=false, mouseDown=false;
+const modifierCodes=process.platform==='darwin'?[56,3640]:[29,3613];
+const isModifier=code=>modifierCodes.includes(code);
 const isWin=process.platform==='win32';
 function hasTool(name){const cmd=isWin?'where':process.platform==='darwin'?'which':'which';return spawnSync(cmd,[name],{stdio:'ignore'}).status===0}
 function createWindow(){
