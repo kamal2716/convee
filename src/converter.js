@@ -1,19 +1,9 @@
-const fs=require('node:fs/promises'),path=require('node:path'),os=require('node:os'),{spawnSync,execFile}=require('node:child_process'),{promisify}=require('node:util');
+const fs=require('node:fs/promises'),path=require('node:path'),{spawnSync,execFile}=require('node:child_process'),{promisify}=require('node:util');
 const run=promisify(execFile);const sharp=require('sharp');const {PDFDocument}=require('pdf-lib');
 const {detectEngines}=require('./engines/engine-manager');
 const {listFormats}=require('./engines/route-planner');
 const {convertWithEngine}=require('./engines/conversion-runner');
-const {structured}=require('./engines/data-converters');
 const imageFormats=['png','jpg','jpeg','webp','avif','tiff','gif','bmp'];
-const textFormats=['txt','md','html','htm','json','csv','xml'];
-const writerFormats=['doc','docx','odt','rtf'];
-const sheetFormats=['xls','xlsx','ods'];
-const slideFormats=['ppt','pptx','odp'];
-const officeFormats=[...writerFormats,...sheetFormats,...slideFormats];
-const mediaFormats=['mp4','mov','mkv','webm','avi','wmv','flv','mpeg','mp3','wav','aac','ogg','flac','m4a','wma','opus'];
-const ebookFormats=['epub','mobi','azw3','fb2'];
-const archiveFormats=['zip','7z','tar','gz','bz2','xz'];
-const labels={png:'PNG image',jpg:'JPEG image',jpeg:'JPEG image',webp:'WebP image',avif:'AVIF image',tiff:'TIFF image',gif:'GIF image',bmp:'Bitmap image',txt:'Plain text',md:'Markdown',html:'HTML',json:'JSON',csv:'CSV',xml:'XML',pdf:'PDF'};
 const toolCache={};function tool(name){if(!(name in toolCache)){const cmd=process.platform==='win32'?'where':'which';toolCache[name]=spawnSync(cmd,[name],{stdio:'ignore'}).status===0}return toolCache[name]}
 function engineStatus(){const detected=detectEngines();return Object.fromEntries(Object.entries(detected).map(([k,v])=>[k,v.available]));}
 function getFormats(ext){return listFormats(ext)}
