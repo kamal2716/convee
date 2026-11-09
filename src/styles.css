@@ -63,3 +63,5 @@ body.navy-theme .empty b{color:#f6f0e6}body.navy-theme .donut-preview-panel{back
 .tool-status{font-size:10px;color:#718b7e;margin-top:4px}
 @media(max-width:760px){.power-tools{grid-template-columns:1fr}}
 body.navy-theme .tool-card{background:#17283b}body.navy-theme .tool-card>b{color:#f6f0e6}body.navy-theme .tool-card select{background:#101c2b;color:#f6f0e6}
+
+.watch-list{display:grid;gap:7px;margin-top:10px}.watch-row{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;min-width:0}.watch-row span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}.watch-row small{font-size:10px;color:var(--muted);white-space:nowrap}.watch-row button{flex:none}
