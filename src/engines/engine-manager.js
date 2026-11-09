@@ -8,6 +8,7 @@ const definitions={
  libreoffice:{commands:['soffice','libreoffice'],categories:['documents','spreadsheets','presentations']},
  pandoc:{commands:['pandoc'],categories:['documents']},
  calibre:{commands:['ebook-convert'],categories:['documents']},
+ hwp5odt:{commands:['hwp5odt'],categories:['documents']},
  imagemagick:{commands:['magick','convert'],categories:['images']},
  ghostscript:{commands:['gswin64c','gswin32c','gs'],categories:['documents']},
  sevenZip:{commands:['7z','7zz'],categories:['archives'],bundled:()=>require('7zip-bin').path7za},
