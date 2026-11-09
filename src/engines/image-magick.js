@@ -43,7 +43,10 @@ async function convert({command,input,output,from,to,quality=88,crop,resize}){
   if(crop){
     const values=['left','top','width','height'].map(k=>clamp(crop[k],0,1));
     if(values.some(v=>v===null)||values[2]<=0||values[3]<=0)throw new Error('Crop rectangle is invalid.');
-    const identify=runSync(command,['identify','-format','%w %h',input]);
+    const executable=path.basename(command).toLowerCase();
+    const identifyCommand=/^convert(?:\.exe)?$/.test(executable)?'identify':command;
+    const identifyArgs=/^convert(?:\.exe)?$/.test(executable)?['-format','%w %h',input]:['identify','-format','%w %h',input];
+    const identify=runSync(identifyCommand,identifyArgs);
     if(identify.error||identify.status!==0)throw new Error('Could not read image dimensions for cropping.');
     const [w,h]=identify.stdout.trim().split(/\s+/).map(Number);
     if(!Number.isFinite(w)||!Number.isFinite(h)||w<1||h<1)throw new Error('Image dimensions are invalid.');
