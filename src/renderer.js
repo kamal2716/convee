@@ -19,3 +19,6 @@ for(const ev of ['dragenter','dragover'])$('#dropzone').addEventListener(ev,e=>{
 document.querySelectorAll('.nav').forEach(b=>b.onclick=()=>{document.querySelectorAll('.nav').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));$('#'+b.dataset.view+'View').classList.add('active');$('#pageTitle').textContent={home:'Good files. Better flow.',history:'Your conversion history',settings:'Make it yours'}[b.dataset.view]});
 function toggleTheme(){document.body.classList.toggle('light')}$('#themeBtn').onclick=toggleTheme;$('#settingsTheme').onclick=toggleTheme;
 render();renderHistory();
+
+async function showEngines(){const host=$('#engineTags');if(!host)return;try{const data=await window.convee.engines();host.innerHTML=Object.entries(data).map(([k,v])=>'<span class="engine-tag '+(v?'ok':'missing')+'">'+(v?'● ':'○ ')+k+'</span>').join('')}catch(e){host.textContent='Could not read engine status'}}
+showEngines();
