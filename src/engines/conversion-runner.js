@@ -4,11 +4,12 @@ const {planConversion}=require('./route-planner');
 const {detectEngines}=require('./engine-manager');
 const {convertStructured}=require('./data-converters');
 const {marked}=require('marked');
+const {convert:convertImageMagick}=require('./image-magick');
 const imageExt=new Set('jpg jpeg png webp avif tiff bmp gif'.split(' '));
 const videoExt=new Set('mp4 mov mkv webm avi wmv flv mpeg mpg m4v 3gp ogv vob ts mts m2ts'.split(' '));
 const audioExt=new Set('mp3 wav aac ogg opus flac m4a wma aiff aif ape alac amr ac3 eac3 dts caf au'.split(' '));
 const archiveExt=new Set('zip 7z rar tar gz bz2 xz zst lz lzma cab iso arj lzh'.split(' '));
-async function convertWithEngine({input,format,output,quality=88,mediaPreset='balanced'}){
+async function convertWithEngine({input,format,output,quality=88,mediaPreset='balanced',crop,resize}){
  const from=path.extname(input).slice(1).toLowerCase(),to=format.toLowerCase(),status=detectEngines(),plan=planConversion(from,to,status);
  if(!plan.available)throw new Error(plan.reason||'No compatible conversion engine is installed.');
  const dir=path.dirname(output);await fs.mkdir(dir,{recursive:true});
@@ -21,7 +22,7 @@ async function convertWithEngine({input,format,output,quality=88,mediaPreset='ba
   else if(['html','htm'].includes(to))value='<!doctype html><meta charset="utf-8"><pre>'+value.replace(/[&<>]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[ch]))+'</pre>';
   await fs.writeFile(output,value,'utf8');return{output,engine:'Convee text adapters'};
  }
- if(plan.engine==='imagemagick'){await run(status.imagemagick.command,[input,output],{timeout});return{output,engine:'ImageMagick'}}
+ if(plan.engine==='imagemagick')return convertImageMagick({...status.imagemagick,input,output,from,to,quality,crop,resize});
  if(plan.engine==='ffmpeg'){
   const args=['-nostdin','-y','-i',input,'-map_metadata','0'];
   if(plan.route==='video-transcode'){
