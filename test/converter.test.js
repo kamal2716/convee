@@ -60,7 +60,7 @@ test('Markdown is rendered to HTML by the built-in route',async()=>{
   const input=path.join(dir,'notes.md');await fs.writeFile(input,'# Hello\n\n**Convee** works.');
   const result=await convertFile({input,format:'html'});
   const html=await fs.readFile(result.output,'utf8');
-  assert.match(html,/<h1>Hello<\\/h1>/);assert.match(html,/<strong>Convee<\\/strong>/);
+  assert.ok(html.includes('<h1>Hello</h1>'));assert.ok(html.includes('<strong>Convee</strong>'));
  }finally{await fs.rm(dir,{recursive:true,force:true})}
 });
 test('CSV converts to JSON through the public conversion API',async()=>{
