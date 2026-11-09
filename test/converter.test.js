@@ -6,7 +6,7 @@ const path=require('node:path');
 const {getFormats,convertFile}=require('../src/converter');
 test('only offers safe built-in text conversions',()=>{
  const formats=getFormats('txt').map(x=>x.ext);
- assert.deepEqual(formats,['md','html']);
+ assert.deepEqual(formats,['md','html','htm']);
  assert.deepEqual(getFormats('hwp'),[]);
 });
 test('pretty-prints valid JSON into a new file',async()=>{
