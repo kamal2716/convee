@@ -86,3 +86,22 @@ $('#cropExport').onclick=async()=>{
  try{const result=await window.convee.convert({input:cropInput,format,quality,crop:cropRect||undefined});closeCrop();toast('Cropped image saved · '+result.output);window.convee.reveal(result.output)}
  catch(e){toast('Crop failed: '+e.message)}
 };
+
+
+// Exact duplicate finder: scan a user-selected folder and show safe review results.
+const duplicateButton=$('#duplicateScan');
+if(duplicateButton)duplicateButton.addEventListener('click',async()=>{
+ const folder=await window.convee.chooseFolder();if(!folder)return;
+ const summary=$('#duplicateSummary'),host=$('#duplicateResults');
+ duplicateButton.disabled=true;summary.textContent='Scanning files locally…';host.innerHTML='';
+ try{
+  const result=await window.convee.scanDuplicates(folder);
+  const pretty=n=>n<1024?n+' B':n<1048576?(n/1024).toFixed(1)+' KB':n<1073741824?(n/1048576).toFixed(1)+' MB':(n/1073741824).toFixed(2)+' GB';
+  summary.textContent=result.groups.length+' duplicate group(s) · '+result.scanned+' files scanned · '+pretty(result.reclaimable)+' potentially reclaimable';
+  if(!result.groups.length){host.innerHTML='<div class="duplicate-empty">No exact duplicates found in this folder.</div>';return}
+  host.innerHTML=result.groups.map((group,index)=>'<div class="duplicate-group"><b>Group '+(index+1)+' · '+pretty(group.size)+' each</b><small>'+group.files.length+' identical files · '+esc(group.hash.slice(0,16))+'…</small>'+group.files.map(file=>'<div class="duplicate-file"><span title="'+esc(file.path)+'">'+esc(file.path)+'</span><button class="small-btn" data-reveal-duplicate="'+esc(file.path)+'">Show</button></div>').join('')+'</div>').join('');
+  host.querySelectorAll('[data-reveal-duplicate]').forEach(button=>button.addEventListener('click',()=>window.convee.reveal(button.dataset.revealDuplicate)));
+  if(result.skipped)summary.textContent+=' · '+result.skipped+' item(s) skipped';
+ }catch(error){summary.textContent='Scan stopped: '+error.message}
+ finally{duplicateButton.disabled=false}
+});
