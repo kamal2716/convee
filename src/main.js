@@ -37,6 +37,8 @@ function startGlobalHook(){
 }
 app.whenReady().then(()=>{
  ipcMain.handle('files:choose',chooseFiles);
+ ipcMain.handle('pdf:choose',async()=>{const r=await dialog.showOpenDialog(win,{filters:[{name:'PDF files',extensions:['pdf']}],properties:['openFile','multiSelections']});return r.canceled?[]:r.filePaths});
+ ipcMain.handle('folder:choose',async()=>{const r=await dialog.showOpenDialog(win,{properties:['openDirectory','createDirectory']});return r.canceled?null:r.filePaths[0]});
  ipcMain.handle('preferences:load',async()=>{try{return JSON.parse(await fs.readFile(path.join(app.getPath('userData'),'preferences.json'),'utf8'))}catch{return {}}});
  ipcMain.handle('preferences:save',async(_,settings)=>{const file=path.join(app.getPath('userData'),'preferences.json');await fs.mkdir(path.dirname(file),{recursive:true});await fs.writeFile(file,JSON.stringify(settings,null,2));if(overlay&&!overlay.isDestroyed())overlay.webContents.send('preferences:changed',settings);return true});
  ipcMain.handle('history:load',async()=>{try{return JSON.parse(await fs.readFile(path.join(app.getPath('userData'),'history.json'),'utf8'))}catch{return []}});
