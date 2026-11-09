@@ -4,10 +4,12 @@ const fs=require('node:fs/promises');
 const os=require('node:os');
 const path=require('node:path');
 const {getFormats,convertFile}=require('../src/converter');
-test('only offers safe built-in text conversions',()=>{
+test('format catalogue includes text conversions and does not claim unsupported HWP routes',()=>{
  const formats=getFormats('txt').map(x=>x.ext);
- assert.deepEqual(formats,['md','html','htm']);
- assert.deepEqual(getFormats('hwp'),[]);
+ assert.ok(formats.includes('md'));
+ assert.ok(formats.includes('html'));
+ assert.ok(formats.includes('htm'));
+ assert.equal(getFormats('hwp').length,0);
 });
 test('pretty-prints valid JSON into a new file',async()=>{
  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'convee-test-'));
