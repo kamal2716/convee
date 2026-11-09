@@ -3,7 +3,6 @@ const {promisify}=require('node:util');const {execFile}=require('node:child_proc
 const {planConversion}=require('./route-planner');
 const {detectEngines}=require('./engine-manager');
 const {convertStructured}=require('./data-converters');
-const {convertStructured}=require('./data-converters');
 const imageExt=new Set('jpg jpeg png webp avif tiff bmp gif'.split(' '));
 const videoExt=new Set('mp4 mov mkv webm avi wmv flv mpeg mpg m4v 3gp ogv vob ts mts m2ts'.split(' '));
 const audioExt=new Set('mp3 wav aac ogg opus flac m4a wma aiff aif ape alac amr ac3 eac3 dts caf au'.split(' '));
