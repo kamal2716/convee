@@ -4,7 +4,7 @@ contextBridge.exposeInMainWorld('convee',{
  inspect:paths=>ipcRenderer.invoke('files:inspect',paths),
  formats:ext=>ipcRenderer.invoke('formats:list',ext),
  engines:()=>ipcRenderer.invoke('engines:status'),
- loadHistory:()=>ipcRenderer.invoke('history:load'),
+ loadHistory:()=>ipcRenderer.invoke('history:load'),\n loadPreferences:()=>ipcRenderer.invoke('preferences:load'),\n savePreferences:value=>ipcRenderer.invoke('preferences:save',value),\n onPreferencesChanged:cb=>ipcRenderer.on('preferences:changed',(_,v)=>cb(v)),
  saveHistory:items=>ipcRenderer.invoke('history:save',items),
  convert:payload=>ipcRenderer.invoke('files:convert',payload),
  reveal:p=>ipcRenderer.invoke('files:reveal',p),open:p=>ipcRenderer.invoke('files:open',p),
