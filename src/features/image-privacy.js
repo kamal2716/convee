@@ -18,7 +18,8 @@ async function inspectImage(file){
 async function exportWithoutMetadata(file){
   const meta=await sharp(file,{failOn:'none'}).metadata();
   const ext=(meta.format||path.extname(file).slice(1)||'png').toLowerCase();
-  const allowed=['jpeg','png','webp','avif','tiff','gif'];
+  const allowed=['jpeg','png','webp','avif','tiff'];
+  if((meta.pages||1)>1)throw new Error('Animated or multi-page images are not exported by this privacy tool yet; use a format-specific workflow to preserve every frame.');
   if(!allowed.includes(ext))throw new Error('Metadata-safe export is not supported for this image format.');
   const suffix=ext==='jpeg'?'jpg':ext;
   const dir=path.dirname(file),base=path.basename(file,path.extname(file));
@@ -31,7 +32,6 @@ async function exportWithoutMetadata(file){
   else if(ext==='webp')pipeline=pipeline.webp({quality:92});
   else if(ext==='avif')pipeline=pipeline.avif({quality:90});
   else if(ext==='tiff')pipeline=pipeline.tiff();
-  else if(ext==='gif')pipeline=pipeline.gif();
   await pipeline.toFile(output);
   const stat=await fs.stat(output);
   if(!stat.isFile()||stat.size===0)throw new Error('Privacy export did not produce a valid output file.');
