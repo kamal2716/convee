@@ -2,7 +2,8 @@ const { app, BrowserWindow, ipcMain, dialog, shell, Menu, screen } = require('el
 const path = require('node:path');
 const fs = require('node:fs/promises');
 const { spawnSync } = require('node:child_process');
-const { convertFile, getFormats, engineStatus } = require('./converter');
+const { convertFile, getFormats, engineStatus, pdfOperation } = require('./converter');
+const watchers=new Map();
 
 let win, overlay, hook, modifierDown=false, mouseDown=false;
 const modifierCodes=process.platform==='darwin'?[56,3640]:[29,3613];
@@ -44,6 +45,9 @@ app.whenReady().then(()=>{
  ipcMain.handle('formats:list',(_,ext)=>getFormats(ext));
  ipcMain.handle('engines:status',()=>engineStatus());
  ipcMain.handle('files:convert',async(_,payload)=>convertFile(payload));
+ ipcMain.handle('pdf:operate',async(_,payload)=>pdfOperation(payload));
+ ipcMain.handle('watch:add',async(_,cfg)=>{const id=cfg.id||cfg.folder;if(watchers.has(id))watchers.get(id).close();const watcher=fs.watch(cfg.folder,{recursive:true},async(event,name)=>{if(!name||!cfg.format)return;const file=path.join(cfg.folder,String(name));try{const stat=await fs.stat(file);if(!stat.isFile()||path.extname(file).slice(1).toLowerCase()===cfg.format)return;await convertFile({input:file,format:cfg.format,outputDir:cfg.outputDir||cfg.folder})}catch(err){console.warn('Watch conversion:',err.message)}});watchers.set(id,watcher);return id});
+ ipcMain.handle('watch:remove',async(_,id)=>{watchers.get(id)?.close();watchers.delete(id);return true});
  ipcMain.handle('files:reveal',(_,p)=>shell.showItemInFolder(p));
  ipcMain.handle('files:open',(_,p)=>shell.openPath(p));
  ipcMain.on('overlay:dropped',(_,paths)=>{hideOverlay();if(win){win.show();win.focus();win.webContents.send('files:chosen',paths)}});
@@ -52,5 +56,5 @@ app.whenReady().then(()=>{
  createWindow();createOverlay();startGlobalHook();
  app.on('activate',()=>{if(BrowserWindow.getAllWindows().length===0)createWindow()});
 });
-app.on('will-quit',()=>{try{hook?.stop()}catch{}});
+app.on('will-quit',()=>{try{hook?.stop()}catch{}for(const w of watchers.values())w.close();watchers.clear()});
 app.on('window-all-closed',()=>{if(process.platform!=='darwin')app.quit()});
