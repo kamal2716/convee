@@ -1,0 +1,20 @@
+{
+  "name": "convee",
+  "version": "1.0.0",
+  "description": "Private, offline-first desktop file converter",
+  "main": "src/main.js",
+  "author": "convee contributors",
+  "license": "MIT",
+  "scripts": { "start": "electron .", "dev": "electron .", "dist": "electron-builder" },
+  "dependencies": { "pdf-lib": "^1.17.1", "sharp": "^0.33.5" },
+  "devDependencies": { "electron": "^33.2.1", "electron-builder": "^25.1.8" },
+  "build": {
+    "appId": "com.convee.desktop",
+    "productName": "convee",
+    "directories": { "output": "release" },
+    "files": ["src/**/*", "package.json"],
+    "win": { "target": ["nsis", "portable"] },
+    "mac": { "target": ["dmg"] },
+    "linux": { "target": ["AppImage", "deb"] }
+  }
+}
