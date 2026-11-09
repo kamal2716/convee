@@ -77,7 +77,7 @@ async function convertWithEngine({input,format,output,quality=88,mediaPreset='ba
    "elif dst_ext in ('.gltf','.glb'): bpy.ops.export_scene.gltf(filepath=dst)",
    "elif dst_ext=='.fbx': bpy.ops.export_scene.fbx(filepath=dst)",
    "else: raise RuntimeError('Unsupported Blender output: '+dst_ext)"
-  ].join("\\n");
+  ].join("\n");
   const tmp=path.join(os.tmpdir(),'convee-blender-export.py');await fs.writeFile(tmp,script);
   try{await run(status.blender.command,['-b','--python',tmp,'--',input,output],{timeout})}finally{await fs.rm(tmp,{force:true})}
   return{output,engine:'Blender'};
