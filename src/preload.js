@@ -6,6 +6,8 @@ contextBridge.exposeInMainWorld('convee',{
  previewImage:file=>ipcRenderer.invoke('image:preview',file),
  chooseFolder:()=>ipcRenderer.invoke('folder:choose'),
  scanDuplicates:folder=>ipcRenderer.invoke('duplicates:scan',folder),
+ inspectImageMetadata:file=>ipcRenderer.invoke('image:metadata',file),
+ exportImageWithoutMetadata:file=>ipcRenderer.invoke('image:strip-metadata',file),
  inspect:paths=>ipcRenderer.invoke('files:inspect',paths),
  formats:ext=>ipcRenderer.invoke('formats:list',ext),
  engines:()=>ipcRenderer.invoke('engines:status'),
