@@ -4,7 +4,7 @@ const fs = require('node:fs/promises');
 const { spawnSync } = require('node:child_process');
 const { convertFile, getFormats, engineStatus } = require('./converter');
 
-let win, overlay, hook, ctrlDown=false, mouseDown=false;
+let win, overlay, hook, modifierDown=false, mouseDown=false;\nconst modifierCodes=process.platform==='darwin'?[56,3640]:[29,3613];\nconst isModifier=code=>modifierCodes.includes(code);
 const isWin=process.platform==='win32';
 function hasTool(name){const cmd=isWin?'where':process.platform==='darwin'?'which':'which';return spawnSync(cmd,[name],{stdio:'ignore'}).status===0}
 function createWindow(){
@@ -24,11 +24,11 @@ function startGlobalHook(){
  try{
   const {uIOhook}=require('uiohook-napi');
   hook=uIOhook;
-  hook.on('keydown',e=>{if(e.keycode===29||e.keycode===3613)ctrlDown=true;});
-  hook.on('keyup',e=>{if(e.keycode===29||e.keycode===3613){ctrlDown=false;if(!mouseDown)hideOverlay()}});
-  hook.on('mousedown',e=>{if(e.button===1){mouseDown=true;if(ctrlDown)showOverlay()}});
-  hook.on('mouseup',e=>{if(e.button===1){mouseDown=false;if(!ctrlDown)hideOverlay()}});
-  hook.on('mousemove',e=>{if(ctrlDown&&mouseDown&&overlay&&!overlay.isDestroyed()&&overlay.isVisible())overlay.setPosition(Math.max(0,e.x-180),Math.max(0,e.y-180),false)});
+  hook.on('keydown',e=>{if(isModifier(e.keycode))modifierDown=true;});
+  hook.on('keyup',e=>{if(isModifier(e.keycode)){modifierDown=false;if(!mouseDown)hideOverlay()}});
+  hook.on('mousedown',e=>{if(e.button===1){mouseDown=true;if(modifierDown)showOverlay()}});
+  hook.on('mouseup',e=>{if(e.button===1){mouseDown=false;if(!modifierDown)hideOverlay()}});
+  hook.on('mousemove',e=>{if(modifierDown&&mouseDown&&overlay&&!overlay.isDestroyed()&&overlay.isVisible())overlay.setPosition(Math.max(0,e.x-180),Math.max(0,e.y-180),false)});
   hook.start();
  }catch(err){console.warn('Global drag hook unavailable:',err.message)}
 }
