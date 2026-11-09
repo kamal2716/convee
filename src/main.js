@@ -5,6 +5,10 @@ const { spawnSync } = require('node:child_process');
 const chokidar=require('chokidar');
 const { convertFile, getFormats, engineStatus, pdfOperation } = require('./converter');
 const watchers=new Map();
+const watchConfigPath=()=>path.join(app.getPath('userData'),'watch-folders.json');
+async function readWatchConfigs(){try{return JSON.parse(await fs.readFile(watchConfigPath(),'utf8'))}catch{return []}}
+async function writeWatchConfigs(items){await fs.mkdir(path.dirname(watchConfigPath()),{recursive:true});await fs.writeFile(watchConfigPath(),JSON.stringify(items,null,2))}
+function startFolderWatcher(cfg){const id=cfg.id||cfg.folder;if(watchers.has(id))watchers.get(id).close();const watcher=chokidar.watch(cfg.folder,{ignoreInitial:true,awaitWriteFinish:{stabilityThreshold:1200,pollInterval:150},ignored:p=>p.includes('.convee-')||p.includes('-converted.')});watcher.on('add',async file=>{if(!cfg.format||path.extname(file).slice(1).toLowerCase()===cfg.format)return;try{await convertFile({input:file,format:cfg.format,outputDir:cfg.outputDir||cfg.folder})}catch(err){console.warn('Watch conversion:',err.message)}});watchers.set(id,watcher);return id}
 
 let win, overlay, hook, modifierDown=false, mouseDown=false;
 const modifierCodes=process.platform==='darwin'?[56,3640]:[29,3613];
@@ -50,13 +54,15 @@ app.whenReady().then(()=>{
  ipcMain.handle('engines:status',()=>engineStatus());
  ipcMain.handle('files:convert',async(_,payload)=>convertFile(payload));
  ipcMain.handle('pdf:operate',async(_,payload)=>pdfOperation(payload));
- ipcMain.handle('watch:add',async(_,cfg)=>{const id=cfg.id||cfg.folder;if(watchers.has(id))watchers.get(id).close();const watcher=chokidar.watch(cfg.folder,{ignoreInitial:true,awaitWriteFinish:{stabilityThreshold:1200,pollInterval:150},ignored:p=>p.includes('.convee-')||p.includes('-converted.')});watcher.on('add',async file=>{if(!cfg.format||path.extname(file).slice(1).toLowerCase()===cfg.format)return;try{await convertFile({input:file,format:cfg.format,outputDir:cfg.outputDir||cfg.folder})}catch(err){console.warn('Watch conversion:',err.message)}});watchers.set(id,watcher);return id});
- ipcMain.handle('watch:remove',async(_,id)=>{await watchers.get(id)?.close();watchers.delete(id);return true});
+ ipcMain.handle('watch:list',async()=>readWatchConfigs());
+ ipcMain.handle('watch:add',async(_,cfg)=>{const id=cfg.id||cfg.folder;const items=(await readWatchConfigs()).filter(x=>x.id!==id);const saved={...cfg,id};items.push(saved);await writeWatchConfigs(items);startFolderWatcher(saved);return id});
+ ipcMain.handle('watch:remove',async(_,id)=>{await watchers.get(id)?.close();watchers.delete(id);await writeWatchConfigs((await readWatchConfigs()).filter(x=>x.id!==id));return true});
  ipcMain.handle('files:reveal',(_,p)=>shell.showItemInFolder(p));
  ipcMain.handle('files:open',(_,p)=>shell.openPath(p));
  ipcMain.on('overlay:dropped',(_,paths)=>{hideOverlay();if(win){win.show();win.focus();win.webContents.send('files:chosen',paths)}});
  ipcMain.on('overlay:convert',async(_,payload)=>{try{const result=await convertFile(payload);if(win)win.webContents.send('overlay:result',{ok:true,...result});hideOverlay()}catch(e){if(win)win.webContents.send('overlay:result',{ok:false,error:e.message});}});
  ipcMain.on('overlay:close',hideOverlay);
+ for(const cfg of await readWatchConfigs()){try{startFolderWatcher(cfg)}catch(err){console.warn('Could not restore watch folder:',err.message)}}
  createWindow();createOverlay();startGlobalHook();
  app.on('activate',()=>{if(BrowserWindow.getAllWindows().length===0)createWindow()});
 });
