@@ -10,7 +10,7 @@ const engineRoutes=[
  {id:'pandoc',engine:'pandoc',from:['documents'],to:['documents'],extensions:(a,b)=>['txt','md','html','htm','docx','odt','epub','rst','org','tex'].includes(a)&&['txt','md','html','docx','odt','epub','rst','org','tex'].includes(b)},
  {id:'ebooks',engine:'calibre',from:['documents'],to:['documents'],extensions:(a,b)=>['epub','mobi','azw3','azw','kfx','fb2','txt','pdf','docx','html','rtf','odt'].includes(a)&&['epub','mobi','azw3','azw','kfx','fb2','txt','pdf','docx','html','rtf','odt'].includes(b)},
  {id:'media',engine:'ffmpeg',from:['video','audio','subtitles'],to:['video','audio','subtitles'],extensions:any},
- {id:'archive',engine:'sevenZip',from:['archives'],to:['archives'],extensions:(a,b)=>['zip','7z','tar','gz','bz2','xz'].includes(a)&&['zip','7z','tar','gz','bz2','xz'].includes(b)},
+ {id:'archive',engine:'sevenZip',from:['archives'],to:['archives'],extensions:(a,b)=>['zip','7z','rar','tar','gz','bz2','xz'].includes(a)&&['zip','7z','tar','gz','bz2','xz'].includes(b)},
  {id:'gis',engine:'gdal',from:['gis'],to:['gis'],extensions:(a,b)=>['shp','geojson','kml','kmz','gpkg','gpx','csv'].includes(a)&&['shp','geojson','kml','kmz','gpkg','gpx','csv'].includes(b)},
  {id:'cad',engine:'oda',from:['cad'],to:['cad'],extensions:(a,b)=>['dwg','dxf'].includes(a)&&['dwg','dxf'].includes(b)},
  {id:'3d',engine:'assimp',from:['models3d'],to:['models3d'],extensions:(a,b)=>['obj','stl','ply','fbx','3ds','dae','gltf','glb'].includes(a)&&['obj','stl','ply','fbx','3ds','dae','gltf','glb'].includes(b)},
