@@ -12,7 +12,7 @@ const definitions={
  ghostscript:{commands:['gswin64c','gswin32c','gs'],categories:['documents']},
  sevenZip:{commands:['7z','7zz'],categories:['archives'],bundled:()=>require('7zip-bin').path7za},
  unrar:{commands:['unrar'],categories:['archives']},
- gdal:{commands:['ogr2ogr','gdalinfo'],categories:['gis']},
+ gdal:{commands:['ogr2ogr'],categories:['gis']},
  assimp:{commands:['assimp'],categories:['models3d']},
  blender:{commands:['blender'],categories:['models3d']},
  oda:{commands:['ODAFileConverter'],categories:['cad']},
