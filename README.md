@@ -1,83 +1,126 @@
-# convee desktop
+# Convee Desktop
 
-A native, local-first desktop file converter built with Electron. This is a desktop application, not a hosted website. Running it opens a desktop window and lets users choose files or drag them in from File Explorer.
+A native, local-first desktop file converter built with Electron. Convee is a desktop application, not a hosted website. Files are processed on the user's computer; the app does not upload source files.
 
-## Run on your computer
+## Run locally
 
-1. Install **Node.js 20+**.
-2. Clone/download this repository.
-3. Open a terminal in the project folder.
-4. Run:
+1. Install Node.js 20 or later.
+2. Clone this repository and open a terminal in its directory.
+3. Run:
 
 ```bash
 npm install
 npm start
 ```
 
-To build an installer:
+Build packages:
 
 ```bash
 npm run dist
+npm run dist:win
 ```
 
-Windows installers and a portable build are written to `release/`.
+Windows NSIS and portable artifacts are written to `release/`.
 
-## Built-in conversions
+## Conversion architecture
 
-- Images: PNG, JPEG, WebP, AVIF and TIFF (Sharp).
-- Text-like files: TXT, Markdown, HTML, JSON, CSV and XML (basic text/markup transforms).
-- PDF: load and rewrite PDF structure (pdf-lib).
+- `src/formats/registry.js`: canonical extension catalogue.
+- `src/engines/engine-manager.js`: discovers built-in, bundled and system engines.
+- `src/engines/routes.js`: explicit input/output category and extension allow-lists.
+- `src/engines/route-planner.js`: exposes only routes with an explicit adapter; reports missing engines separately.
+- `src/engines/conversion-runner.js`: format-specific local execution adapters.
+- `src/engines/data-converters.js`: typed CSV, TSV, JSON, XML, YAML and TOML readers/writers.
+- `src/converter.js`: output naming, native image/PDF paths and shared route dispatch.
 
-Files are processed locally and output is saved beside the original. The app does not upload user files.
+A format appearing in the catalogue does **not** mean every conversion involving it is supported. The route planner is deliberately conservative: a pair must have an explicit adapter and a required engine available before it is enabled.
 
-## Optional local engines
+## Implemented conversion groups
 
-The floating format donut is an experimental desktop interaction. On Windows, hold Ctrl while dragging with the left mouse button. macOS uses Option; Linux uses Ctrl. The native input hook and transparent overlay require testing on each operating system and desktop environment.
+| Group | Current implementation |
+|---|---|
+| Raster images | Sharp for PNG, JPEG, WebP, AVIF and TIFF routes; ImageMagick can extend the set when installed |
+| Text | TXT, Markdown and HTML basic conversions; Markdown-to-HTML uses Marked |
+| Structured data | CSV, TSV, JSON, XML, YAML and TOML typed conversions |
+| Office | LibreOffice adapter for explicitly allow-listed document, spreadsheet and presentation pairs |
+| E-books | Calibre adapter for explicitly allow-listed EPUB/MOBI/AZW3/FB2-related routes |
+| Video/audio | FFmpeg adapter with format-specific output codec maps and quality presets |
+| Subtitles | FFmpeg SRT/ASS/SSA/VTT conversions |
+| Archives | 7-Zip adapter for supported archive extraction/repacking pairs; RAR is read-only |
+| PDF | Merge, split, selected-page extraction and PDF rewrite/optimization; Ghostscript improves image-aware compression |
+| GIS | GDAL adapter for selected vector formats when installed |
+| CAD | ODA File Converter adapter for DWG/DXF pairs when installed |
+| 3D | Assimp and Blender adapters for selected mesh/model formats when installed |
+| Fonts | FontForge adapter for selected outline-font formats when installed |
 
-- LibreOffice: compatible Writer, Calc and Impress conversions.
-- FFmpeg: audio/video conversions.
-- 7-Zip: detected, but archive-to-archive conversion is not yet exposed.
-- GDAL, Pandoc and Ghostscript: detected for future adapters; not yet exposed as general conversion routes.
+### Bundled runtime tools
 
-Install optional engines separately. Convee does not upload files.
+- FFmpeg executable from `ffmpeg-static`.
+- 7-Zip executable from `7zip-bin`.
+- Sharp native image library.
 
-## Current limitations
+The Windows package workflow unpacks these runtime binaries from Electron ASAR. Other specialist engines are optional local installs and are detected from PATH. They are not silently downloaded or installed.
 
-This is an early desktop MVP, not a 270-format converter yet. HWP/HWPX, e-books, fonts, CAD, 3D models, geospatial conversion, PDF page extraction/merge, crop tools, watch folders and browser-download capture are not implemented. Unsupported pairs are not shown as available.
+### Optional specialist engines
+
+| Engine | Used for |
+|---|---|
+| LibreOffice | Office documents, spreadsheets and presentations |
+| Pandoc | Rich document conversions |
+| Calibre | E-books |
+| ImageMagick | Extended image and PDF raster routes |
+| Ghostscript | PDF compression |
+| GDAL | GIS/vector datasets |
+| ODA File Converter | DWG/DXF |
+| Assimp / Blender | 3D models |
+| FontForge | Font conversion |
+
+## Desktop features
+
+- Native file picker and drag/drop queue.
+- Batch conversion and recent conversion history.
+- Global modifier + drag floating format donut (native input hook; operating-system testing is still required).
+- Visual drag-to-select image crop and export.
+- PDF merge, split and page extraction.
+- Persistent watch-folder rules, restored when Convee starts.
+- Balanced, smaller-file and high-quality media presets.
+- Navy/cream themes and editable RGB/hex palette controls.
+
+## Known limitations — not a complete 270-format matrix yet
+
+The screenshot's format inventory is broader than the currently implemented adapters. In particular, these are not yet verified as complete:
+- HWP/HWPX, Apple Pages/Keynote/Numbers and several legacy office formats.
+- RAW camera formats and specialist image/vector formats.
+- All video/audio codecs and subtitle variants listed in the inventory.
+- Archive types beyond the tested 7-Zip route set; RAR creation is not supported.
+- GIS conversions that need multi-file Shapefile sidecars, coordinate reference transformations or raster pipelines.
+- DGN, complex DWG features, and CAD/3D STEP/IGES workflows.
+- Font collections and bitmap fonts.
+- OCR, PDF-to-editable-document fidelity and every PDF page-rendering path.
+
+Some engines may reject particular files even when a route is enabled (for example, an ImageMagick build may disable PDF delegates). Such failures must be surfaced to the user; they must not produce a success message for an invalid or missing output.
+
+## Testing and packaging
+
+The test suite uses real temporary fixtures for:
+- CSV/JSON/YAML/XML/TOML conversion.
+- PDF merge and selected-page extraction.
+- Raster image crop dimensions.
+- Markdown-to-HTML output.
+- Route availability and unsupported-pair rejection.
+
+GitHub Actions runs the Node test suite and a Windows packaging workflow. A successful CI package confirms the build can be produced on a Windows runner; it is not a substitute for manual testing on a physical Windows PC, especially for the global mouse hook, overlay placement, file dialogs and installer behavior.
 
 ## Security
 
-- Renderer has no Node integration.
+- Renderer Node integration is disabled.
 - Context isolation and sandbox are enabled.
-- File operations are exposed through a narrow preload API.
-- Conversion happens on the local machine.
+- File access is exposed through a narrow preload API.
+- Conversions run locally.
+
+## Appearance customization
+
+Convee opens with a navy, cream and coral palette. Settings include full-spectrum colour pickers, RGB/hex entry, live preview, donut opacity and cream/navy themes. Preferences are saved in the app's local user-data folder.
 
 ## License
 
 MIT.
-
-
-## Appearance customization
-
-Convee opens with its signature navy, cream and coral palette. Open **Settings → Colour Studio** to change the donut accent, donut surface, app canvas and warm highlight. Each colour has a full-spectrum system colour picker, editable RGB channels and a hex field. The live preview updates as you adjust a value. Donut opacity and cream/navy workspace themes are configurable too.
-
-Appearance preferences are saved locally in the app's user-data folder and synchronized to the floating donut. No colour settings or file data are sent to a server.
-
-
-## Power tools in progress
-
-The desktop workspace now includes:
-- Image crop by normalized crop rectangle, with Sharp processing and output conversion.
-- PDF merge, split-into-pages, selected-page extraction and PDF optimization.
-- Watch folders using Chokidar with write-completion detection.
-- FFmpeg balanced, smaller-file and high-quality video profiles.
-- Calibre e-book conversion when `ebook-convert` is installed.
-- A Windows NSIS installer and portable target through `npm run dist:win`.
-
-### Optional engines
-
-Install FFmpeg for audio/video; LibreOffice for office documents; Calibre for EPUB/MOBI/AZW3/FB2; Ghostscript for image-aware PDF recompression. These are separate local applications and are not bundled automatically.
-
-### Important implementation limits
-
-The crop tool currently accepts crop percentages rather than providing a drag-to-select visual crop canvas. PDF page rendering to images, true PDF compression without Ghostscript, OCR, CAD conversion and geospatial conversion are not yet available. Native global modifier/drag interaction and the installer still require hands-on Windows testing. The app should not be described as supporting all 270 formats until each adapter is implemented and tested.
