@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('convee',{
  chooseImage:()=>ipcRenderer.invoke('image:choose'),
  previewImage:file=>ipcRenderer.invoke('image:preview',file),
  chooseFolder:()=>ipcRenderer.invoke('folder:choose'),
+ scanDuplicates:folder=>ipcRenderer.invoke('duplicates:scan',folder),
  inspect:paths=>ipcRenderer.invoke('files:inspect',paths),
  formats:ext=>ipcRenderer.invoke('formats:list',ext),
  engines:()=>ipcRenderer.invoke('engines:status'),
