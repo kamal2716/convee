@@ -1,4 +1,4 @@
-const fs=require('node:fs/promises'),path=require('node:path'),{spawnSync,execFile}=require('node:child_process'),{promisify}=require('node:util');
+const fs=require('node:fs/promises'),path=require('node:path'),os=require('node:os'),{spawnSync,execFile}=require('node:child_process'),{promisify}=require('node:util');
 const run=promisify(execFile);const sharp=require('sharp');const {PDFDocument}=require('pdf-lib');
 const imageFormats=['png','jpg','jpeg','webp','avif','tiff','gif','bmp'];
 const textFormats=['txt','md','html','htm','json','csv','xml'];
@@ -28,7 +28,7 @@ async function convertFile({input,format,outputDir,quality=88}){const ext=path.e
  if(textFormats.includes(ext)&&textFormats.includes(target)){const raw=await fs.readFile(input,'utf8');let value=raw;if(target==='json')value=JSON.stringify(JSON.parse(raw),null,2);if(target==='html'&&!['html','htm'].includes(ext))value='<!doctype html><meta charset="utf-8"><pre>'+escapeHtml(raw)+'</pre>';if(['txt','md'].includes(target)&&['html','htm'].includes(ext))value=raw.replace(/<script[\s\S]*?<\/script>/gi,'').replace(/<style[\s\S]*?<\/style>/gi,'').replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&');await fs.writeFile(output,value,'utf8');return{output,message:'Text conversion complete'}}
  if(ext==='pdf'&&target==='pdf'){const doc=await PDFDocument.load(await fs.readFile(input));await fs.writeFile(output,await doc.save({useObjectStreams:true}));return{output,message:'PDF rewritten successfully'}}
  const status=engineStatus();
- if(officeFormats.includes(ext)&&status.libreoffice){const bin=tool('libreoffice')?'libreoffice':'soffice';await run(bin,['--headless','--convert-to',target,'--outdir',folder,input],{timeout:120000});const generated=path.join(folder,base+'.'+target);if(generated!==output)await fs.rename(generated,output);return{output,message:'Office document converted with LibreOffice'}}
+ if(officeFormats.includes(ext)&&status.libreoffice){const bin=tool('libreoffice')?'libreoffice':'soffice';const temp=await fs.mkdtemp(path.join(os.tmpdir(),'convee-'));try{await run(bin,['--headless','--convert-to',target,'--outdir',temp,input],{timeout:120000});const generated=path.join(temp,base+'.'+target);await fs.rename(generated,output)}finally{await fs.rm(temp,{recursive:true,force:true})}return{output,message:'Office document converted with LibreOffice'}}
  if(mediaFormats.includes(ext)&&mediaFormats.includes(target)&&status.ffmpeg){await run('ffmpeg',['-y','-i',input,'-map_metadata','0',output],{timeout:300000});return{output,message:'Media converted with FFmpeg'}}
  if(archiveFormats.includes(ext)&&archiveFormats.includes(target)&&status.sevenZip){await run('7z',['a','-t'+target,output,input],{timeout:300000});return{output,message:'Archive created with 7-Zip'}}
  throw new Error('No compatible local engine is available for this format pair. Check Settings → Conversion engines and install the suggested engine.');
