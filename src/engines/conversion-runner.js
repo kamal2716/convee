@@ -3,6 +3,7 @@ const {promisify}=require('node:util');const {execFile}=require('node:child_proc
 const {planConversion}=require('./route-planner');
 const {detectEngines}=require('./engine-manager');
 const {convertStructured}=require('./data-converters');
+const {marked}=require('marked');
 const imageExt=new Set('jpg jpeg png webp avif tiff bmp gif'.split(' '));
 const videoExt=new Set('mp4 mov mkv webm avi wmv flv mpeg mpg m4v 3gp ogv vob ts mts m2ts'.split(' '));
 const audioExt=new Set('mp3 wav aac ogg opus flac m4a wma aiff aif ape alac amr ac3 eac3 dts caf au'.split(' '));
@@ -15,11 +16,12 @@ async function convertWithEngine({input,format,output,quality=88,mediaPreset='ba
  if(plan.engine==='data')return convertStructured({input,output,from,to});
  if(plan.engine==='text'){
   let value=await fs.readFile(input,'utf8');
-  if(['txt','md'].includes(to)&&['html','htm'].includes(from))value=value.replace(/<[^>]*>/g,' ').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&');
+  if(['html','htm'].includes(to)&&from==='md')value='<!doctype html><meta charset="utf-8">'+marked.parse(value);
+  else if(['txt','md'].includes(to)&&['html','htm'].includes(from))value=value.replace(/<script[^>]*>[\\s\\S]*?<\\/script>/gi,'').replace(/<style[^>]*>[\\s\\S]*?<\\/style>/gi,'').replace(/<[^>]*>/g,' ').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&');
   else if(['html','htm'].includes(to))value='<!doctype html><meta charset="utf-8"><pre>'+value.replace(/[&<>]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[ch]))+'</pre>';
   await fs.writeFile(output,value,'utf8');return{output,engine:'Convee text adapters'};
  }
- if(plan.engine==='imagemagick'){await run('magick',[input,output],{timeout});return{output,engine:'ImageMagick'}}
+ if(plan.engine==='imagemagick'){await run(status.imagemagick.command,[input,output],{timeout});return{output,engine:'ImageMagick'}}
  if(plan.engine==='ffmpeg'){
   const args=['-nostdin','-y','-i',input,'-map_metadata','0'];
   if(videoExt.has(to)){const q=mediaPreset==='small'?'30':mediaPreset==='high'?'18':'23';args.push('-c:v','libx264','-crf',q,'-preset',mediaPreset==='high'?'slow':'medium','-c:a','aac')}
@@ -37,10 +39,10 @@ async function convertWithEngine({input,format,output,quality=88,mediaPreset='ba
  if(plan.engine==='gdal'){
   const drivers={shp:'ESRI Shapefile',geojson:'GeoJSON',kml:'KML',kmz:'LIBKML',gpkg:'GPKG',gpx:'GPX',csv:'CSV'};
   const driver=drivers[to];if(!driver)throw new Error('GDAL output driver is not mapped for .'+to);
-  await run('ogr2ogr',['-f',driver,output,input],{timeout});return{output,engine:'GDAL'}
+  await run(status.gdal.command,['-f',driver,output,input],{timeout});return{output,engine:'GDAL'}
  }
- if(plan.engine==='assimp'){await run('assimp',['export',input,output],{timeout});return{output,engine:'Assimp'}}
- if(plan.engine==='blender'){const script="import bpy,sys\nsrc=sys.argv[-2]; dst=sys.argv[-1]\nbpy.ops.wm.open_mainfile(filepath=src)\next=dst.rsplit('.',1)[-1].lower()\nif ext=='obj': bpy.ops.wm.obj_export(filepath=dst)\nelif ext=='stl': bpy.ops.wm.stl_export(filepath=dst)\nelif ext in ('gltf','glb'): bpy.ops.export_scene.gltf(filepath=dst)\n";const tmp=path.join(os.tmpdir(),'convee-blender-export.py');await fs.writeFile(tmp,script);try{await run('blender',['-b','--python',tmp,'--',input,output],{timeout})}finally{await fs.rm(tmp,{force:true})}return{output,engine:'Blender'}}
+ if(plan.engine==='assimp'){await run(status.assimp.command,['export',input,output],{timeout});return{output,engine:'Assimp'}}
+ if(plan.engine==='blender'){const script="import bpy,sys\nsrc=sys.argv[-2]; dst=sys.argv[-1]\nbpy.ops.wm.open_mainfile(filepath=src)\next=dst.rsplit('.',1)[-1].lower()\nif ext=='obj': bpy.ops.wm.obj_export(filepath=dst)\nelif ext=='stl': bpy.ops.wm.stl_export(filepath=dst)\nelif ext in ('gltf','glb'): bpy.ops.export_scene.gltf(filepath=dst)\n";const tmp=path.join(os.tmpdir(),'convee-blender-export.py');await fs.writeFile(tmp,script);try{await run(status.blender.command,['-b','--python',tmp,'--',input,output],{timeout})}finally{await fs.rm(tmp,{force:true})}return{output,engine:'Blender'}}
  if(plan.engine==='oda'){
   if(!['dwg','dxf'].includes(from)||!['dwg','dxf'].includes(to))throw new Error('ODA adapter supports DWG and DXF pairs only.');
   const inputDir=await fs.mkdtemp(path.join(os.tmpdir(),'convee-cad-in-')),outputDir=await fs.mkdtemp(path.join(os.tmpdir(),'convee-cad-out-'));
