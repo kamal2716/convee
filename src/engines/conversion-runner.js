@@ -30,14 +30,14 @@ async function convertWithEngine({input,format,output,quality=88,mediaPreset='ba
     mp4:['libx264','aac'],mov:['libx264','aac'],mkv:['libx264','aac'],m4v:['libx264','aac'],
     webm:['libvpx-vp9','libopus'],avi:['mpeg4','libmp3lame'],wmv:['wmv2','wmav2'],
     flv:['flv','libmp3lame'],mpeg:['mpeg2video','mp2'],mpg:['mpeg2video','mp2'],
-    '3gp':['h263','aac'],ogv:['libtheora','libvorbis']
+    '3gp':['h263','aac'],ogv:['libtheora','libvorbis'],vob:['mpeg2video','ac3'],ts:['mpeg2video','mp2'],mts:['mpeg2video','mp2'],m2ts:['mpeg2video','mp2']
    };
    const pair=codecs[to];if(!pair)throw new Error('FFmpeg video output .'+to+' is not mapped yet.');
    args.push('-c:v',pair[0],'-c:a',pair[1]);
    if(['libx264','libvpx-vp9','mpeg4'].includes(pair[0]))args.push('-crf',q);
    if(pair[0]==='libx264')args.push('-preset',mediaPreset==='high'?'slow':'medium');
   }else if(plan.route==='audio-transcode'){
-   const codecs={mp3:['libmp3lame','-q:a','2'],wav:['pcm_s16le'],aac:['aac','-b:a','192k'],ogg:['libvorbis','-q:a','5'],opus:['libopus','-b:a','160k'],flac:['flac'],m4a:['aac','-b:a','192k'],aiff:['pcm_s16be'],aif:['pcm_s16be'],ac3:['ac3','-b:a','192k'],eac3:['eac3','-b:a','256k']};
+   const codecs={mp3:['libmp3lame','-q:a','2'],wav:['pcm_s16le'],aac:['aac','-b:a','192k'],ogg:['libvorbis','-q:a','5'],opus:['libopus','-b:a','160k'],flac:['flac'],m4a:['aac','-b:a','192k'],wma:['wmav2','-b:a','192k'],aiff:['pcm_s16be'],aif:['pcm_s16be'],alac:['alac'],caf:['pcm_s16le'],au:['pcm_mulaw'],ac3:['ac3','-b:a','192k'],eac3:['eac3','-b:a','256k']};
    const pair=codecs[to];if(!pair)throw new Error('FFmpeg audio output .'+to+' is not mapped yet.');
    args.push('-vn','-c:a',pair[0],...pair.slice(1));
   }else if(plan.route==='subtitle-transcode'){
