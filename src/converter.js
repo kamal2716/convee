@@ -2,7 +2,7 @@ const fs=require('node:fs/promises'),path=require('node:path'),{spawnSync,execFi
 const run=promisify(execFile);const sharp=require('sharp');const {PDFDocument}=require('pdf-lib');
 const imageFormats=['png','jpg','jpeg','webp','avif','tiff','gif','bmp'];
 const textFormats=['txt','md','html','htm','json','csv','xml'];
-const officeFormats=['doc','docx','odt','rtf','xls','xlsx','ods','ppt','pptx','odp','hwp','hwpx'];
+const writerFormats=['doc','docx','odt','rtf'];\nconst sheetFormats=['xls','xlsx','ods'];\nconst slideFormats=['ppt','pptx','odp'];\nconst officeFormats=[...writerFormats,...sheetFormats,...slideFormats];
 const mediaFormats=['mp4','mov','mkv','webm','avi','wmv','flv','mpeg','mp3','wav','aac','ogg','flac','m4a'];
 const archiveFormats=['zip','7z','tar','gz','bz2','xz'];
 const labels={png:'PNG image',jpg:'JPEG image',jpeg:'JPEG image',webp:'WebP image',avif:'AVIF image',tiff:'TIFF image',gif:'GIF image',bmp:'Bitmap image',txt:'Plain text',md:'Markdown',html:'HTML',json:'JSON',csv:'CSV',xml:'XML',pdf:'PDF'};
@@ -12,9 +12,9 @@ function getFormats(ext){ext=(ext||'').toLowerCase();const engines=engineStatus(
  if(imageFormats.includes(ext))return imageFormats.filter(x=>x!==ext&&!(x==='bmp'||x==='gif')).map(x=>({ext:x,label:labels[x]||x.toUpperCase()+' image',ready:true}));
  if(['txt','md'].includes(ext))return ['txt','md','html'].filter(x=>x!==ext).map(x=>({ext:x,label:labels[x]||x.toUpperCase(),ready:true}));\n if(['html','htm'].includes(ext))return ['txt','md'].map(x=>({ext:x,label:labels[x]||x.toUpperCase(),ready:true}));\n if(ext==='json')return [{ext:'txt',label:'Plain text',ready:true},{ext:'json',label:'Pretty JSON',ready:true}];\n if(['csv','xml'].includes(ext))return [{ext:'txt',label:'Plain text',ready:true}];
  if(ext==='pdf')return[{ext:'pdf',label:'Rewrite / optimize PDF',ready:true}];
- if(officeFormats.includes(ext)){const supported=ext==='hwp'||ext==='hwpx'?[]:['pdf','docx','odt','rtf','txt'];return supported.map(x=>({ext:x,label:labels[x]||x.toUpperCase(),ready:engines.libreoffice,note:engines.libreoffice?'':'Install LibreOffice'}))}
+ if(officeFormats.includes(ext)){const supported=writerFormats.includes(ext)?['pdf','docx','odt','rtf','txt']:sheetFormats.includes(ext)?['pdf','xlsx','ods','csv']:['pdf','pptx','odp'];return supported.filter(x=>x!==ext).map(x=>({ext:x,label:labels[x]||x.toUpperCase(),ready:engines.libreoffice,note:engines.libreoffice?'':'Install LibreOffice'}))}
  if(mediaFormats.includes(ext))return['mp4','webm','mp3','wav','m4a','flac'].filter(x=>x!==ext).map(x=>({ext:x,label:x.toUpperCase()+' media',ready:engines.ffmpeg,note:engines.ffmpeg?'':'Install FFmpeg'}));
- if(archiveFormats.includes(ext))return['zip','7z','tar','gz'].filter(x=>x!==ext).map(x=>({ext:x,label:x.toUpperCase()+' archive',ready:engines.sevenZip,note:engines.sevenZip?'':'Install 7-Zip'}));
+ if(archiveFormats.includes(ext))return [];
  return [];
 }
 async function convertFile({input,format,outputDir,quality=88}){const ext=path.extname(input).slice(1).toLowerCase(),target=format.toLowerCase(),base=path.basename(input,path.extname(input)),folder=outputDir||path.dirname(input);await fs.mkdir(folder,{recursive:true});let output=path.join(folder,base+'.'+target);if(output===input)output=path.join(folder,base+'-converted.'+target);
@@ -22,7 +22,7 @@ async function convertFile({input,format,outputDir,quality=88}){const ext=path.e
  if(textFormats.includes(ext)&&textFormats.includes(target)){const raw=await fs.readFile(input,'utf8');let value=raw;if(target==='json')value=JSON.stringify(JSON.parse(raw),null,2);if(target==='html'&&!['html','htm'].includes(ext))value='<!doctype html><meta charset="utf-8"><pre>'+escapeHtml(raw)+'</pre>';if(['txt','md'].includes(target)&&['html','htm'].includes(ext))value=raw.replace(/<script[\s\S]*?<\/script>/gi,'').replace(/<style[\s\S]*?<\/style>/gi,'').replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&');await fs.writeFile(output,value,'utf8');return{output,message:'Text conversion complete'}}
  if(ext==='pdf'&&target==='pdf'){const doc=await PDFDocument.load(await fs.readFile(input));await fs.writeFile(output,await doc.save({useObjectStreams:true}));return{output,message:'PDF rewritten successfully'}}
  const status=engineStatus();
- if(officeFormats.includes(ext)&&!['hwp','hwpx'].includes(ext)&&status.libreoffice){const bin=tool('libreoffice')?'libreoffice':'soffice';await run(bin,['--headless','--convert-to',target,'--outdir',folder,input],{timeout:120000});const generated=path.join(folder,base+'.'+target);if(generated!==output)await fs.rename(generated,output);return{output,message:'Office document converted with LibreOffice'}}
+ if(officeFormats.includes(ext)&&status.libreoffice){const bin=tool('libreoffice')?'libreoffice':'soffice';await run(bin,['--headless','--convert-to',target,'--outdir',folder,input],{timeout:120000});const generated=path.join(folder,base+'.'+target);if(generated!==output)await fs.rename(generated,output);return{output,message:'Office document converted with LibreOffice'}}
  if(mediaFormats.includes(ext)&&mediaFormats.includes(target)&&status.ffmpeg){await run('ffmpeg',['-y','-i',input,'-map_metadata','0',output],{timeout:300000});return{output,message:'Media converted with FFmpeg'}}
  if(archiveFormats.includes(ext)&&archiveFormats.includes(target)&&status.sevenZip){await run('7z',['a','-t'+target,output,input],{timeout:300000});return{output,message:'Archive created with 7-Zip'}}
  throw new Error('No compatible local engine is available for this format pair. Check Settings → Conversion engines and install the suggested engine.');
