@@ -8,7 +8,7 @@ const timeout=15*60*1000;
 function parseFormats(text){
   const formats={};
   for(const line of String(text||'').split(/\r?\n/)){
-    const match=line.match(/^\s*([A-Z0-9][A-Z0-9+,*_-]*)\*?\s+([r-][w-][+-]?)\b/i);
+    const match=line.match(/^\s*([A-Z0-9][A-Z0-9+,*_-]*)\s+\S+\s+([r-][w-][+-])(?:\s|$)/i);
     if(!match)continue;
     const id=match[1].toLowerCase();
     const flags=match[2].toLowerCase();
