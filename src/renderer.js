@@ -105,3 +105,36 @@ if(duplicateButton)duplicateButton.addEventListener('click',async()=>{
  }catch(error){summary.textContent='Scan stopped: '+error.message}
  finally{duplicateButton.disabled=false}
 });
+
+
+// Image metadata inspector and explicit metadata-free export.
+let privacyImage=null;
+const privacyChoose=$('#imageMetadataChoose'),privacyExport=$('#imageMetadataStrip');
+if(privacyChoose&&privacyExport){
+ privacyChoose.addEventListener('click',async()=>{
+  const file=await window.convee.chooseImage();if(!file)return;
+  privacyImage=file;privacyChoose.disabled=true;privacyExport.disabled=true;
+  const summary=$('#imageMetadataSummary'),details=$('#imageMetadataDetails');
+  summary.textContent='Reading image metadata locally…';details.innerHTML='';
+  try{
+   const m=await window.convee.inspectImageMetadata(file);
+   summary.textContent=m.name+' · '+m.format.toUpperCase()+' · '+(m.width||'?')+' × '+(m.height||'?')+' px';
+   const rows=[
+    ['Colour space',m.space],['Channels',m.channels],['Bit depth',m.depth],
+    ['Transparency',m.hasAlpha?'Yes':'No'],['Animation/pages',m.pages],
+    ['EXIF metadata',m.hasExif?'Present':'Not detected'],['ICC colour profile',m.hasIcc?'Present':'Not detected'],
+    ['IPTC metadata',m.hasIptc?'Present':'Not detected'],['XMP metadata',m.hasXmp?'Present':'Not detected']
+   ];
+   details.innerHTML=rows.map(([k,v])=>'<div class="metadata-row"><span>'+esc(k)+'</span><b>'+esc(String(v??'—'))+'</b></div>').join('');
+   privacyExport.disabled=false;
+  }catch(error){privacyImage=null;summary.textContent='Could not inspect image: '+error.message}
+  finally{privacyChoose.disabled=false}
+ });
+ privacyExport.addEventListener('click',async()=>{
+  if(!privacyImage)return;
+  privacyExport.disabled=true;const summary=$('#imageMetadataSummary');
+  try{const result=await window.convee.exportImageWithoutMetadata(privacyImage);summary.textContent=result.message+' · '+result.output.split(/[\\/]/).pop();window.convee.reveal(result.output);toast('Privacy-safe image copy created')}
+  catch(error){summary.textContent='Export failed: '+error.message}
+  finally{privacyExport.disabled=false}
+ });
+}
