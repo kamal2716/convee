@@ -62,4 +62,27 @@ loadWatchFolders();
 
 async function runPdfTool(operation){const paths=await window.convee.choosePdfFiles();if(!paths.length)return;if(operation==='merge'&&paths.length<2){toast('Choose at least two PDFs to merge');return}let pages;if(operation==='extract'){pages=prompt('Pages to extract (examples: 1,3,5-8):','1');if(!pages)return}const first=paths[0],output=operation==='merge'?first.replace(/\.pdf$/i,'-merged.pdf'):first.replace(/\.pdf$/i,'-'+operation+'.pdf');try{const result=await window.convee.pdfOperation({operation,inputs:paths,output,pages});toast(result.message+' · '+(result.output||result.outputs?.length+' files'));if(result.output)window.convee.reveal(result.output)}catch(e){toast('PDF tool: '+e.message)}}
 $('#pdfMerge').onclick=()=>runPdfTool('merge');$('#pdfSplit').onclick=()=>runPdfTool('split');$('#pdfExtract').onclick=()=>runPdfTool('extract');$('#pdfCompress').onclick=async()=>{const paths=await window.convee.choosePdfFiles();if(!paths.length)return;try{const result=await window.convee.convert({input:paths[0],format:'pdf'});toast('PDF rewritten · '+result.output);window.convee.reveal(result.output)}catch(e){toast(e.message)}};
-$('#cropChoose').onclick=async()=>{const input=await window.convee.chooseImage();if(!input)return;const left=Number(prompt('Crop left (%)','0'))/100,top=Number(prompt('Crop top (%)','0'))/100,width=Number(prompt('Crop width (%)','100'))/100,height=Number(prompt('Crop height (%)','100'))/100;if(![left,top,width,height].every(Number.isFinite)||left<0||top<0||width<=0||height<=0||left+width>1||top+height>1){toast('Crop values must fit inside the image');return}const format=prompt('Output format: png, jpg, webp or avif','png');if(!format)return;try{const result=await window.convee.convert({input,format,crop:{left,top,width,height}});toast('Cropped image saved · '+result.output);window.convee.reveal(result.output)}catch(e){toast(e.message)}};
+let cropInput=null,cropRect=null,cropStart=null;
+const cropEditor=$('#cropEditor'),cropFrame=$('#cropFrame'),cropPreview=$('#cropPreview'),cropSelection=$('#cropSelection');
+function closeCrop(){cropEditor.classList.add('hidden');cropInput=null;cropRect=null;cropStart=null;cropPreview.removeAttribute('src');cropSelection.style.display='none'}
+$('#cropChoose').onclick=async()=>{
+ const input=await window.convee.chooseImage();if(!input)return;
+ try{const preview=await window.convee.previewImage(input);cropInput=input;cropRect=null;cropPreview.onload=()=>{cropSelection.style.display='none'};cropPreview.src=preview;cropEditor.classList.remove('hidden')}
+ catch(e){toast('Could not preview image: '+e.message)}
+};
+$('#cropClose').onclick=closeCrop;
+$('#cropEditor').addEventListener('click',e=>{if(e.target===cropEditor)closeCrop()});
+function cropPoint(e){const r=cropFrame.getBoundingClientRect();return{x:Math.max(0,Math.min(r.width,e.clientX-r.left)),y:Math.max(0,Math.min(r.height,e.clientY-r.top)),width:r.width,height:r.height}}
+function drawCrop(x,y,w,h){cropSelection.style.display='block';cropSelection.style.left=x+'px';cropSelection.style.top=y+'px';cropSelection.style.width=w+'px';cropSelection.style.height=h+'px'}
+cropFrame.addEventListener('pointerdown',e=>{if(!cropInput)return;cropFrame.setPointerCapture(e.pointerId);const p=cropPoint(e);cropStart=p;cropRect=null;drawCrop(p.x,p.y,0,0)});
+cropFrame.addEventListener('pointermove',e=>{if(!cropStart)return;const p=cropPoint(e),x=Math.min(cropStart.x,p.x),y=Math.min(cropStart.y,p.y),w=Math.abs(p.x-cropStart.x),h=Math.abs(p.y-cropStart.y);drawCrop(x,y,w,h);cropRect={left:x/p.width,top:y/p.height,width:w/p.width,height:h/p.height}});
+cropFrame.addEventListener('pointerup',e=>{if(!cropStart)return;const p=cropPoint(e);if(Math.abs(p.x-cropStart.x)<8||Math.abs(p.y-cropStart.y)<8){cropRect=null;cropSelection.style.display='none'}cropStart=null});
+cropFrame.addEventListener('pointercancel',()=>{cropStart=null});
+$('#cropReset').onclick=()=>{cropRect=null;cropSelection.style.display='none'};
+$('#cropQuality').addEventListener('input',e=>$('#cropQualityValue').textContent=e.target.value);
+$('#cropExport').onclick=async()=>{
+ if(!cropInput)return;
+ const format=$('#cropFormat').value,quality=Number($('#cropQuality').value);
+ try{const result=await window.convee.convert({input:cropInput,format,quality,crop:cropRect||undefined});closeCrop();toast('Cropped image saved · '+result.output);window.convee.reveal(result.output)}
+ catch(e){toast('Crop failed: '+e.message)}
+};
