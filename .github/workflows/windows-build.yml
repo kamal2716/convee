@@ -15,6 +15,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      # node-gyp versions used by uiohook-napi still import distutils.
+      # Python 3.12+ removed it, so pin the build environment to 3.11.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Configure node-gyp Python
+        shell: pwsh
+        run: |
+          $pythonPath = (python -c "import sys; print(sys.executable)").Trim()
+          npm config set python $pythonPath
       - run: npm install
       - run: npm test
       - run: npm run dist:win
