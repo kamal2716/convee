@@ -30,9 +30,20 @@ Windows installers and a portable build are written to `release/`.
 
 Files are processed locally and output is saved beside the original. The app does not upload user files.
 
-## Optional local engines\n\nThe floating format donut is available on Windows when holding Ctrl and dragging files from File Explorer. It uses a small native input hook and a transparent always-on-top window. macOS/Linux currently use the main app drag-and-drop flow; native modifier-drag hooks are platform-specific.\n\nDetected optional engines: LibreOffice/soffice (Office and HWP-compatible conversions where LibreOffice supports the input), FFmpeg (audio/video), 7-Zip (archives), GDAL (geospatial capability detection), Pandoc and Ghostscript (detected for future adapters). Install them separately; Convee never uploads files.\n\n## Expanding format support
+## Optional local engines
 
-The conversion engine is modular in `src/converter.js`. Office/HWP, video/audio, archives, CAD, fonts, 3D and geospatial formats need dedicated engines and format-specific handling. Common optional engines include LibreOffice, FFmpeg, ImageMagick, Ghostscript, Pandoc, 7-Zip and GDAL. They are not bundled or silently assumed to be installed. Add adapters and availability checks before advertising those conversions as supported.
+The floating format donut is an experimental desktop interaction. On Windows, hold Ctrl while dragging with the left mouse button. macOS uses Option; Linux uses Ctrl. The native input hook and transparent overlay require testing on each operating system and desktop environment.
+
+- LibreOffice: compatible Writer, Calc and Impress conversions.
+- FFmpeg: audio/video conversions.
+- 7-Zip: detected, but archive-to-archive conversion is not yet exposed.
+- GDAL, Pandoc and Ghostscript: detected for future adapters; not yet exposed as general conversion routes.
+
+Install optional engines separately. Convee does not upload files.
+
+## Current limitations
+
+This is an early desktop MVP, not a 270-format converter yet. HWP/HWPX, e-books, fonts, CAD, 3D models, geospatial conversion, PDF page extraction/merge, crop tools, watch folders and browser-download capture are not implemented. Unsupported pairs are not shown as available.
 
 ## Security
 
