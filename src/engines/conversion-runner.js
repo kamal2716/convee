@@ -61,7 +61,27 @@ async function convertWithEngine({input,format,output,quality=88,mediaPreset='ba
   await run(status.gdal.command,['-f',driver,output,input],{timeout});return{output,engine:'GDAL'}
  }
  if(plan.engine==='assimp'){await run(status.assimp.command,['export',input,output],{timeout});return{output,engine:'Assimp'}}
- if(plan.engine==='blender'){const script="import bpy,sys\nsrc=sys.argv[-2]; dst=sys.argv[-1]\nbpy.ops.wm.open_mainfile(filepath=src)\next=dst.rsplit('.',1)[-1].lower()\nif ext=='obj': bpy.ops.wm.obj_export(filepath=dst)\nelif ext=='stl': bpy.ops.wm.stl_export(filepath=dst)\nelif ext in ('gltf','glb'): bpy.ops.export_scene.gltf(filepath=dst)\n";const tmp=path.join(os.tmpdir(),'convee-blender-export.py');await fs.writeFile(tmp,script);try{await run(status.blender.command,['-b','--python',tmp,'--',input,output],{timeout})}finally{await fs.rm(tmp,{force:true})}return{output,engine:'Blender'}}
+ if(plan.engine==='blender'){
+  const script=[
+   "import bpy,sys,os",
+   "src=sys.argv[-2]; dst=sys.argv[-1]",
+   "src_ext=os.path.splitext(src)[1].lower(); dst_ext=os.path.splitext(dst)[1].lower()",
+   "if src_ext=='.blend': bpy.ops.wm.open_mainfile(filepath=src)",
+   "elif src_ext=='.obj': bpy.ops.wm.obj_import(filepath=src) if hasattr(bpy.ops.wm,'obj_import') else bpy.ops.import_scene.obj(filepath=src)",
+   "elif src_ext=='.stl': bpy.ops.wm.stl_import(filepath=src) if hasattr(bpy.ops.wm,'stl_import') else bpy.ops.import_mesh.stl(filepath=src)",
+   "elif src_ext in ('.gltf','.glb'): bpy.ops.import_scene.gltf(filepath=src)",
+   "elif src_ext=='.fbx': bpy.ops.import_scene.fbx(filepath=src)",
+   "else: raise RuntimeError('Unsupported Blender input: '+src_ext)",
+   "if dst_ext=='.obj': bpy.ops.wm.obj_export(filepath=dst) if hasattr(bpy.ops.wm,'obj_export') else bpy.ops.export_scene.obj(filepath=dst)",
+   "elif dst_ext=='.stl': bpy.ops.wm.stl_export(filepath=dst) if hasattr(bpy.ops.wm,'stl_export') else bpy.ops.export_mesh.stl(filepath=dst)",
+   "elif dst_ext in ('.gltf','.glb'): bpy.ops.export_scene.gltf(filepath=dst)",
+   "elif dst_ext=='.fbx': bpy.ops.export_scene.fbx(filepath=dst)",
+   "else: raise RuntimeError('Unsupported Blender output: '+dst_ext)"
+  ].join("\\n");
+  const tmp=path.join(os.tmpdir(),'convee-blender-export.py');await fs.writeFile(tmp,script);
+  try{await run(status.blender.command,['-b','--python',tmp,'--',input,output],{timeout})}finally{await fs.rm(tmp,{force:true})}
+  return{output,engine:'Blender'};
+ }
  if(plan.engine==='oda'){
   if(!['dwg','dxf'].includes(from)||!['dwg','dxf'].includes(to))throw new Error('ODA adapter supports DWG and DXF pairs only.');
   const inputDir=await fs.mkdtemp(path.join(os.tmpdir(),'convee-cad-in-')),outputDir=await fs.mkdtemp(path.join(os.tmpdir(),'convee-cad-out-'));
