@@ -66,7 +66,8 @@ The Windows package workflow unpacks these runtime binaries from Electron ASAR. 
 |---|---|
 | LibreOffice | Office documents, spreadsheets and presentations |
 | Pandoc | Rich document conversions |
-| Calibre | E-books |\n| pyhwp (`hwp5odt`) | Legacy HWP to ODT |
+| Calibre | E-books |
+| pyhwp (`hwp5odt`) | Legacy HWP to ODT |
 | ImageMagick | Extended image and PDF raster routes |
 | Ghostscript | PDF compression |
 | GDAL | GIS/vector datasets |
