@@ -43,9 +43,23 @@ $('#presetDefault').addEventListener('click',()=>{prefs={...defaultPrefs};loadCo
 async function initializeAppearance(){try{prefs={...defaultPrefs,...await window.convee.loadPreferences()}}catch{}loadColorFields();bindColorStudio();applyPreferences()}
 initializeAppearance();
 
-const watchedFolders=[];
-function addWatchFolder(){window.convee.chooseFolder().then(async folder=>{if(!folder)return;const cfg={id:folder,folder,format:$('#watchFormat').value};try{await window.convee.watchFolder(cfg);watchedFolders.push(cfg);$('#watchStatus').textContent=watchedFolders.length+' folder(s) · watching for new files';toast('Watch folder enabled')}catch(e){toast('Watch folder unavailable: '+e.message)}})}
+let watchedFolders=[];
+function renderWatchFolders(){
+ const host=$('#watchList');if(!host)return;
+ $('#watchStatus').textContent=watchedFolders.length+' folder(s) · watching for new files';
+ host.innerHTML=watchedFolders.map(x=>'<div class="watch-row"><span title="'+esc(x.folder)+'">'+esc(x.folder)+'</span><small>→ '+esc((x.format||'').toUpperCase())+'</small><button class="small-btn" data-unwatch="'+esc(x.id)+'">Stop</button></div>').join('')||'<small>No folders watched yet</small>';
+ host.querySelectorAll('[data-unwatch]').forEach(b=>b.onclick=async()=>{await window.convee.unwatchFolder(b.dataset.unwatch);watchedFolders=watchedFolders.filter(x=>x.id!==b.dataset.unwatch);renderWatchFolders();toast('Watch folder removed')});
+}
+async function loadWatchFolders(){try{watchedFolders=await window.convee.watchFolders()||[]}catch{watchedFolders=[]}renderWatchFolders()}
+async function addWatchFolder(){
+ const folder=await window.convee.chooseFolder();if(!folder)return;
+ const cfg={id:folder,folder,format:$('#watchFormat').value};
+ try{await window.convee.watchFolder(cfg);watchedFolders=watchedFolders.filter(x=>x.id!==cfg.id);watchedFolders.push(cfg);renderWatchFolders();toast('Watch folder enabled and saved')}
+ catch(e){toast('Watch folder unavailable: '+e.message)}
+}
 $('#watchAdd').addEventListener('click',addWatchFolder);
+loadWatchFolders();
+
 async function runPdfTool(operation){const paths=await window.convee.choosePdfFiles();if(!paths.length)return;if(operation==='merge'&&paths.length<2){toast('Choose at least two PDFs to merge');return}let pages;if(operation==='extract'){pages=prompt('Pages to extract (examples: 1,3,5-8):','1');if(!pages)return}const first=paths[0],output=operation==='merge'?first.replace(/\.pdf$/i,'-merged.pdf'):first.replace(/\.pdf$/i,'-'+operation+'.pdf');try{const result=await window.convee.pdfOperation({operation,inputs:paths,output,pages});toast(result.message+' · '+(result.output||result.outputs?.length+' files'));if(result.output)window.convee.reveal(result.output)}catch(e){toast('PDF tool: '+e.message)}}
 $('#pdfMerge').onclick=()=>runPdfTool('merge');$('#pdfSplit').onclick=()=>runPdfTool('split');$('#pdfExtract').onclick=()=>runPdfTool('extract');$('#pdfCompress').onclick=async()=>{const paths=await window.convee.choosePdfFiles();if(!paths.length)return;try{const result=await window.convee.convert({input:paths[0],format:'pdf'});toast('PDF rewritten · '+result.output);window.convee.reveal(result.output)}catch(e){toast(e.message)}};
 $('#cropChoose').onclick=async()=>{const input=await window.convee.chooseImage();if(!input)return;const left=Number(prompt('Crop left (%)','0'))/100,top=Number(prompt('Crop top (%)','0'))/100,width=Number(prompt('Crop width (%)','100'))/100,height=Number(prompt('Crop height (%)','100'))/100;if(![left,top,width,height].every(Number.isFinite)||left<0||top<0||width<=0||height<=0||left+width>1||top+height>1){toast('Crop values must fit inside the image');return}const format=prompt('Output format: png, jpg, webp or avif','png');if(!format)return;try{const result=await window.convee.convert({input,format,crop:{left,top,width,height}});toast('Cropped image saved · '+result.output);window.convee.reveal(result.output)}catch(e){toast(e.message)}};
