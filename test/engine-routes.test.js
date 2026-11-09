@@ -32,7 +32,7 @@ test('HWP route is limited to pyhwp-supported ODT output',()=>{
 
 test('image routes require actual readable and writable codecs',()=>{
  const status={sharp:{available:true,readable:{png:true,jpeg:true},writable:{png:true,jpeg:true}},imagemagick:{available:false}};
- assert.equal(planConversion('png','jpg',status).available,true);
+ assert.equal(planConversion('png','jpg',{sharp:{available:true,readable:{png:true},writable:{jpg:true}}}).available,true);
  assert.equal(planConversion('png','psd',status).available,false);
  assert.equal(planConversion('psd','png',status).available,false);
 });
