@@ -28,3 +28,18 @@ test('HWP route is limited to pyhwp-supported ODT output',()=>{
  assert.equal(planConversion('hwp','odt',status).available,true);
  assert.equal(planConversion('hwp','pdf',status).available,false);
 });
+
+
+test('image routes require actual readable and writable codecs',()=>{
+ const status={sharp:{available:true,readable:{png:true,jpeg:true},writable:{png:true,jpeg:true}},imagemagick:{available:false}};
+ assert.equal(planConversion('png','jpg',status).available,true);
+ assert.equal(planConversion('png','psd',status).available,false);
+ assert.equal(planConversion('psd','png',status).available,false);
+});
+test('ImageMagick format flags are parsed independently for reading and writing',()=>{
+ const {parseFormats}=require('../src/engines/image-magick');
+ const formats=parseFormats(' PNG* rw-\n JPEG* rw-\n HEIC* r--\n PSD* r--\n');
+ assert.deepEqual(formats.png,{read:true,write:true});
+ assert.deepEqual(formats.heic,{read:true,write:false});
+ assert.deepEqual(formats.psd,{read:true,write:false});
+});
