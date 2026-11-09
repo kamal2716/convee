@@ -20,7 +20,7 @@ async function convertFile({input,format,outputDir,quality=88,mediaPreset='balan
   return{output,message:'PDF structure optimized (install Ghostscript for image recompression)'};
  }
  // All non-native conversions use the same route planner and execution adapters.
- const result=await convertWithEngine({input,format:target,output,quality,mediaPreset});
+ const result=await convertWithEngine({input,format:target,output,quality,mediaPreset,crop});
  const info=await fs.stat(output);if(!info.isFile()||info.size===0)throw new Error('The conversion engine did not produce a non-empty output file.');
  return{...result,output,message:result.message||'Converted successfully'};
 }
