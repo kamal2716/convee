@@ -29,3 +29,14 @@ test('does not overwrite an existing output',async()=>{
   assert.equal(await fs.readFile(existing,'utf8'),'keep me');
  }finally{await fs.rm(dir,{recursive:true,force:true})}
 });
+
+const {PDFDocument}=require('pdf-lib');
+const {pdfOperation}=require('../src/converter');
+test('merge PDFs locally and preserve page count',async()=>{
+ const dir=await fs.mkdtemp(path.join(os.tmpdir(),'convee-pdf-'));
+ try{const inputs=[];for(let i=0;i<2;i++){const d=await PDFDocument.create();d.addPage();const p=path.join(dir,'in'+i+'.pdf');await fs.writeFile(p,await d.save());inputs.push(p)}const output=path.join(dir,'merged.pdf');const result=await pdfOperation({operation:'merge',inputs,output});const merged=await PDFDocument.load(await fs.readFile(result.output));assert.equal(merged.getPageCount(),2)}finally{await fs.rm(dir,{recursive:true,force:true})}
+});
+test('extract selected PDF page ranges',async()=>{
+ const dir=await fs.mkdtemp(path.join(os.tmpdir(),'convee-pdf-'));
+ try{const d=await PDFDocument.create();d.addPage();d.addPage();d.addPage();const input=path.join(dir,'three.pdf');await fs.writeFile(input,await d.save());const output=path.join(dir,'extract.pdf');await pdfOperation({operation:'extract',inputs:[input],output,pages:'1,3'});const result=await PDFDocument.load(await fs.readFile(output));assert.equal(result.getPageCount(),2)}finally{await fs.rm(dir,{recursive:true,force:true})}
+});
