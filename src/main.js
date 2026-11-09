@@ -6,6 +6,7 @@ const chokidar=require('chokidar');
 const sharp=require('sharp');
 const { convertFile, getFormats, engineStatus, pdfOperation } = require('./converter');
 const { findDuplicates } = require('./features/duplicate-finder');
+const { inspectImage, exportWithoutMetadata } = require('./features/image-privacy');
 const watchers=new Map();
 const watchConfigPath=()=>path.join(app.getPath('userData'),'watch-folders.json');
 async function readWatchConfigs(){try{return JSON.parse(await fs.readFile(watchConfigPath(),'utf8'))}catch{return []}}
@@ -54,6 +55,8 @@ app.whenReady().then(async()=>{
  ipcMain.handle('history:save',async(_,items)=>{const file=path.join(app.getPath('userData'),'history.json');await fs.mkdir(path.dirname(file),{recursive:true});await fs.writeFile(file,JSON.stringify(items.slice(0,100),null,2));return true});
  ipcMain.handle('files:inspect',async(_,paths)=>Promise.all(paths.map(async p=>{const s=await fs.stat(p);return{path:p,name:path.basename(p),size:s.size,ext:path.extname(p).slice(1).toLowerCase()}})));
  ipcMain.handle('duplicates:scan',async(_,folder)=>findDuplicates(folder));
+ ipcMain.handle('image:metadata',async(_,file)=>inspectImage(file));
+ ipcMain.handle('image:strip-metadata',async(_,file)=>exportWithoutMetadata(file));
  ipcMain.handle('formats:list',(_,ext)=>getFormats(ext));
  ipcMain.handle('engines:status',()=>engineStatus());
  ipcMain.handle('files:convert',async(_,payload)=>convertFile(payload));
