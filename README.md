@@ -52,11 +52,6 @@ This is an early desktop MVP, not a 270-format converter yet. HWP/HWPX, e-books,
 - File operations are exposed through a narrow preload API.
 - Conversion happens on the local machine.
 
-## License
-
-MIT.
-
-
 ## Appearance customization
 
 Convee opens with its signature navy, cream and coral palette. Open **Settings → Colour Studio** to change the donut accent, donut surface, app canvas and warm highlight. Each colour has a full-spectrum system colour picker, editable RGB channels and a hex field. The live preview updates as you adjust a value. Donut opacity and cream/navy workspace themes are configurable too.
