@@ -1,6 +1,8 @@
 // Explicit engine routes prevent the UI from promising unsupported format pairs.
 const any=()=>true;
 const engineRoutes=[
+ {id:'text-basic',engine:'text',from:['documents'],to:['documents'],extensions:(a,b)=>['txt','md','html','htm'].includes(a)&&['txt','md','html','htm'].includes(b)},
+ {id:'structured-data',engine:'data',from:['data'],to:['data'],extensions:(a,b)=>['csv','tsv','json','xml','yaml','yml','toml'].includes(a)&&['csv','tsv','json','xml','yaml','yml','toml'].includes(b)},
  {id:'image-raster',engine:'sharp',from:['images'],to:['images'],extensions:(a,b)=>['jpg','jpeg','png','webp','avif','tiff'].includes(a)&&['jpg','jpeg','png','webp','avif','tiff'].includes(b)},
  {id:'image-extended',engine:'imagemagick',from:['images'],to:['images'],extensions:any},
  {id:'office',engine:'libreoffice',from:['documents','spreadsheets','presentations'],to:['documents','spreadsheets','presentations'],extensions:any},
