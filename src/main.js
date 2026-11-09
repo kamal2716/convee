@@ -36,6 +36,8 @@ function startGlobalHook(){
 }
 app.whenReady().then(()=>{
  ipcMain.handle('files:choose',chooseFiles);
+ ipcMain.handle('preferences:load',async()=>{try{return JSON.parse(await fs.readFile(path.join(app.getPath('userData'),'preferences.json'),'utf8'))}catch{return {}}});
+ ipcMain.handle('preferences:save',async(_,settings)=>{const file=path.join(app.getPath('userData'),'preferences.json');await fs.mkdir(path.dirname(file),{recursive:true});await fs.writeFile(file,JSON.stringify(settings,null,2));if(overlay&&!overlay.isDestroyed())overlay.webContents.send('preferences:changed',settings);return true});
  ipcMain.handle('history:load',async()=>{try{return JSON.parse(await fs.readFile(path.join(app.getPath('userData'),'history.json'),'utf8'))}catch{return []}});
  ipcMain.handle('history:save',async(_,items)=>{const file=path.join(app.getPath('userData'),'history.json');await fs.mkdir(path.dirname(file),{recursive:true});await fs.writeFile(file,JSON.stringify(items.slice(0,100),null,2));return true});
  ipcMain.handle('files:inspect',async(_,paths)=>Promise.all(paths.map(async p=>{const s=await fs.stat(p);return{path:p,name:path.basename(p),size:s.size,ext:path.extname(p).slice(1).toLowerCase()}})));
