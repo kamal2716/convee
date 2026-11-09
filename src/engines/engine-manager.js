@@ -1,5 +1,7 @@
 const {spawnSync}=require('node:child_process');
 const path=require('node:path');
+const sharp=require('sharp');
+const {probe}=require('./image-magick');
 const definitions={
  sharp:{commands:[],categories:['images'],builtin:true},
  data:{commands:[],categories:['data'],builtin:true},
@@ -29,6 +31,10 @@ function detectEngines(){
   const found=def.commands.map(command=>({command,path:locate(command)})).find(x=>x.path);
   const command=bundled||found?.path||null;
   status[key]={available:Boolean(command),command,source:bundled?'bundled':found?'system':null};
+  if(key==='imagemagick'&&command){
+   const details=probe(command);
+   Object.assign(status[key],details,{command,source:bundled?'bundled':found?'system':null});
+  }
  }
  return status;
 }
