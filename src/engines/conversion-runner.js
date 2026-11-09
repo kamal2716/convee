@@ -83,7 +83,7 @@ async function convertWithEngine({input,format,output,quality=88,mediaPreset='ba
   return{output,engine:'Blender'};
  }
  if(plan.engine==='oda'){
-  if(!['dwg','dxf'].includes(from)||!['dwg','dxf'].includes(to))throw new Error('ODA adapter supports DWG and DXF pairs only.');
+  if(!['dwg','dxf','dgn'].includes(from)||!['dwg','dxf'].includes(to))throw new Error('ODA adapter supports DWG and DXF pairs only.');
   const inputDir=await fs.mkdtemp(path.join(os.tmpdir(),'convee-cad-in-')),outputDir=await fs.mkdtemp(path.join(os.tmpdir(),'convee-cad-out-'));
   try{await fs.copyFile(input,path.join(inputDir,path.basename(input)));await run(status.oda.command,[inputDir,outputDir,'ACAD2018',to.toUpperCase(),'0','1'],{timeout});const files=await fs.readdir(outputDir);const generated=files.find(f=>path.extname(f).toLowerCase()==='.'+to);if(!generated)throw new Error('ODA did not produce a .'+to+' file. Check source compatibility and ODA version.');await fs.copyFile(path.join(outputDir,generated),output);return{output,engine:'ODA File Converter'}}finally{await fs.rm(inputDir,{recursive:true,force:true});await fs.rm(outputDir,{recursive:true,force:true})}
  }
