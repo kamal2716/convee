@@ -1,7 +1,7 @@
 const {formatInfo,extensions}=require('../formats/registry');
 const {detectEngines}=require('./engine-manager');
 const {engineRoutes}=require('./routes');
-function categoriesFor(ext,primary){const extra=[];if(['csv','tsv'].includes(ext))extra.push('spreadsheets');return[primary,...extra]}
+function categoriesFor(ext,primary){const extra=[];if(['csv','tsv'].includes(ext))extra.push('spreadsheets','gis');return[primary,...extra]}
 function planConversion(from,to,status=detectEngines()){
  const source=formatInfo(from),target=formatInfo(to);
  if(!source||!target)return{available:false,engine:null,reason:'This format is not in the Convee format catalogue.'};
