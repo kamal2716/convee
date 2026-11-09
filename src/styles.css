@@ -70,3 +70,5 @@ body.navy-theme .tool-card{background:#17283b}body.navy-theme .tool-card>b{color
 
 /* Local duplicate finder */
 .duplicate-card{grid-column:span 2}.duplicate-results{display:grid;gap:9px;margin-top:10px;max-height:360px;overflow:auto}.duplicate-empty{font-size:11px;color:var(--muted);padding:10px 0}.duplicate-group{padding:12px;border:1px solid var(--line);border-radius:11px;background:#00000008}.duplicate-group>b,.duplicate-group>small{display:block}.duplicate-group>b{font-size:11px}.duplicate-group>small{font-size:9px;color:var(--muted);margin:4px 0 8px}.duplicate-file{display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px solid var(--line)}.duplicate-file span{font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}.duplicate-file .small-btn{padding:5px 8px}.tool-card button:disabled{opacity:.55;cursor:wait}@media(max-width:900px){.duplicate-card{grid-column:span 1}}
+
+.recommended-tag{display:inline-block;justify-self:start;font:8px 'DM Mono';letter-spacing:1px;color:#bd6657;background:#f28b7524;border-radius:5px;padding:4px 6px;margin-bottom:5px;font-style:normal}
