@@ -11,10 +11,10 @@ const engineRoutes=[
  {id:'media',engine:'ffmpeg',from:['video','audio','subtitles'],to:['video','audio','subtitles'],extensions:any},
  {id:'archive',engine:'sevenZip',from:['archives'],to:['archives'],extensions:any},
  {id:'gis',engine:'gdal',from:['gis'],to:['gis'],extensions:any},
- {id:'cad',engine:'oda',from:['cad'],to:['cad'],extensions:(a,b)=>['dwg','dxf','dgn'].includes(a)&&['dwg','dxf','dgn'].includes(b)},
- {id:'3d',engine:'assimp',from:['models3d'],to:['models3d'],extensions:(a,b)=>!['blend','usd','usdz','abc'].includes(a)&&!['blend','usd','usdz','abc'].includes(b)},
- {id:'3d-blender',engine:'blender',from:['models3d'],to:['models3d'],extensions:any},
- {id:'fonts',engine:'fontforge',from:['fonts'],to:['fonts'],extensions:any},
+ {id:'cad',engine:'oda',from:['cad'],to:['cad'],extensions:(a,b)=>['dwg','dxf'].includes(a)&&['dwg','dxf'].includes(b)},
+ {id:'3d',engine:'assimp',from:['models3d'],to:['models3d'],extensions:(a,b)=>['obj','stl','ply','fbx','3ds','dae','gltf','glb'].includes(a)&&['obj','stl','ply','fbx','3ds','dae','gltf','glb'].includes(b)},
+ {id:'3d-blender',engine:'blender',from:['models3d'],to:['models3d'],extensions:(a,b)=>['blend','obj','stl','gltf','glb','fbx'].includes(a)&&['obj','stl','gltf','glb','fbx'].includes(b)},
+ {id:'fonts',engine:'fontforge',from:['fonts'],to:['fonts'],extensions:(a,b)=>['ttf','otf','woff','woff2','pfa','pfb','sfd'].includes(a)&&['ttf','otf','woff','woff2','pfa','pfb','sfd'].includes(b)},
 
 ];
 module.exports={engineRoutes};
