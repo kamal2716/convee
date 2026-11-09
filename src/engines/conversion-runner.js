@@ -50,6 +50,7 @@ async function convertWithEngine({input,format,output,quality=88,mediaPreset='ba
  }
  if(plan.engine==='libreoffice'){const bin=status.libreoffice.command,temp=await fs.mkdtemp(path.join(os.tmpdir(),'convee-office-'));try{await run(bin,['--headless','--convert-to',to,'--outdir',temp,input],{timeout});const generated=path.join(temp,path.basename(input,path.extname(input))+'.'+to);await fs.access(generated);await fs.copyFile(generated,output);return{output,engine:'LibreOffice'}}finally{await fs.rm(temp,{recursive:true,force:true})}}
  if(plan.engine==='pandoc'){await run(status.pandoc.command,[input,'-o',output],{timeout});return{output,engine:'Pandoc'}}
+ if(plan.engine==='hwp5odt'){await run(status.hwp5odt.command,[input,output],{timeout});return{output,engine:'pyhwp'};}
  if(plan.engine==='calibre'){await run(status.calibre.command,[input,output],{timeout});return{output,engine:'Calibre'}}
  if(plan.engine==='sevenZip'){
   const temp=await fs.mkdtemp(path.join(os.tmpdir(),'convee-archive-'));
