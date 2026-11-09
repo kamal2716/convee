@@ -24,10 +24,29 @@ async function convertWithEngine({input,format,output,quality=88,mediaPreset='ba
  if(plan.engine==='imagemagick'){await run(status.imagemagick.command,[input,output],{timeout});return{output,engine:'ImageMagick'}}
  if(plan.engine==='ffmpeg'){
   const args=['-nostdin','-y','-i',input,'-map_metadata','0'];
-  if(videoExt.has(to)){const q=mediaPreset==='small'?'30':mediaPreset==='high'?'18':'23';args.push('-c:v','libx264','-crf',q,'-preset',mediaPreset==='high'?'slow':'medium','-c:a','aac')}
-  else if(audioExt.has(to)){args.push('-vn');if(to==='mp3')args.push('-c:a','libmp3lame','-q:a','2');else if(to==='aac'||to==='m4a')args.push('-c:a','aac','-b:a','192k');else if(to==='opus')args.push('-c:a','libopus','-b:a','160k')}
-  else if(to==='srt'||to==='ass'||to==='vtt')args.push('-map','0:s:0');
-  args.push(output);await run(status.ffmpeg.command,args,{timeout,maxBuffer:16*1024*1024});return{output,engine:'FFmpeg'}
+  if(plan.route==='video-transcode'){
+   const q=mediaPreset==='small'?'30':mediaPreset==='high'?'18':'23';
+   const codecs={
+    mp4:['libx264','aac'],mov:['libx264','aac'],mkv:['libx264','aac'],m4v:['libx264','aac'],
+    webm:['libvpx-vp9','libopus'],avi:['mpeg4','libmp3lame'],wmv:['wmv2','wmav2'],
+    flv:['flv','libmp3lame'],mpeg:['mpeg2video','mp2'],mpg:['mpeg2video','mp2'],
+    '3gp':['h263','aac'],ogv:['libtheora','libvorbis']
+   };
+   const pair=codecs[to];if(!pair)throw new Error('FFmpeg video output .'+to+' is not mapped yet.');
+   args.push('-c:v',pair[0],'-c:a',pair[1]);
+   if(['libx264','libvpx-vp9','mpeg4'].includes(pair[0]))args.push('-crf',q);
+   if(pair[0]==='libx264')args.push('-preset',mediaPreset==='high'?'slow':'medium');
+  }else if(plan.route==='audio-transcode'){
+   const codecs={mp3:['libmp3lame','-q:a','2'],wav:['pcm_s16le'],aac:['aac','-b:a','192k'],ogg:['libvorbis','-q:a','5'],opus:['libopus','-b:a','160k'],flac:['flac'],m4a:['aac','-b:a','192k'],aiff:['pcm_s16be'],aif:['pcm_s16be'],ac3:['ac3','-b:a','192k'],eac3:['eac3','-b:a','256k']};
+   const pair=codecs[to];if(!pair)throw new Error('FFmpeg audio output .'+to+' is not mapped yet.');
+   args.push('-vn','-c:a',pair[0],...pair.slice(1));
+  }else if(plan.route==='subtitle-transcode'){
+   const codecs={srt:'srt',ass:'ass',ssa:'ass',vtt:'webvtt'};
+   args.push('-map','0:s:0','-c:s',codecs[to]);
+  }
+  args.push(output);await run(status.ffmpeg.command,args,{timeout,maxBuffer:16*1024*1024});
+  return{output,engine:'FFmpeg'};
+
  }
  if(plan.engine==='libreoffice'){const bin=status.libreoffice.command;await run(bin,['--headless','--convert-to',to,'--outdir',dir,input],{timeout});const generated=path.join(dir,path.basename(input,path.extname(input))+'.'+to);if(generated!==output)await fs.rename(generated,output);return{output,engine:'LibreOffice'}}
  if(plan.engine==='pandoc'){await run(status.pandoc.command,[input,'-o',output],{timeout});return{output,engine:'Pandoc'}}
