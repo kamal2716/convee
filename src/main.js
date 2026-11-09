@@ -3,6 +3,7 @@ const path = require('node:path');
 const fs = require('node:fs/promises');
 const { spawnSync } = require('node:child_process');
 const chokidar=require('chokidar');
+const sharp=require('sharp');
 const { convertFile, getFormats, engineStatus, pdfOperation } = require('./converter');
 const watchers=new Map();
 const watchConfigPath=()=>path.join(app.getPath('userData'),'watch-folders.json');
@@ -42,7 +43,8 @@ function startGlobalHook(){
 }
 app.whenReady().then(()=>{
  ipcMain.handle('files:choose',chooseFiles);
- ipcMain.handle('image:choose',async()=>{const r=await dialog.showOpenDialog(win,{filters:[{name:'Images',extensions:['png','jpg','jpeg','webp','avif','tiff']}],properties:['openFile']});return r.canceled?null:r.filePaths[0]});
+ ipcMain.handle('image:choose',async()=>{const r=await dialog.showOpenDialog(win,{filters:[{name:'Images',extensions:['png','jpg','jpeg','webp','avif','tiff','bmp','gif']}],properties:['openFile']});return r.canceled?null:r.filePaths[0]});
+ ipcMain.handle('image:preview',async(_,file)=>{const data=await sharp(file).rotate().resize({width:1400,height:1000,fit:'inside',withoutEnlargement:true}).jpeg({quality:86}).toBuffer();return 'data:image/jpeg;base64,'+data.toString('base64')});
  ipcMain.handle('pdf:choose',async()=>{const r=await dialog.showOpenDialog(win,{filters:[{name:'PDF files',extensions:['pdf']}],properties:['openFile','multiSelections']});return r.canceled?[]:r.filePaths});
  ipcMain.handle('folder:choose',async()=>{const r=await dialog.showOpenDialog(win,{properties:['openDirectory','createDirectory']});return r.canceled?null:r.filePaths[0]});
  ipcMain.handle('preferences:load',async()=>{try{return JSON.parse(await fs.readFile(path.join(app.getPath('userData'),'preferences.json'),'utf8'))}catch{return {}}});
