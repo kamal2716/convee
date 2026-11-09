@@ -17,7 +17,7 @@ async function convertWithEngine({input,format,output,quality=88,mediaPreset='ba
  if(plan.engine==='text'){
   let value=await fs.readFile(input,'utf8');
   if(['html','htm'].includes(to)&&from==='md')value='<!doctype html><meta charset="utf-8">'+marked.parse(value);
-  else if(['txt','md'].includes(to)&&['html','htm'].includes(from))value=value.replace(/<script[^>]*>[\\s\\S]*?<\\/script>/gi,'').replace(/<style[^>]*>[\\s\\S]*?<\\/style>/gi,'').replace(/<[^>]*>/g,' ').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&');
+  else if(['txt','md'].includes(to)&&['html','htm'].includes(from))value=value.replace(new RegExp('<script[^>]*>[\\s\\S]*?</script>','gi'),'').replace(new RegExp('<style[^>]*>[\\s\\S]*?</style>','gi'),'').replace(/<[^>]*>/g,' ').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&');
   else if(['html','htm'].includes(to))value='<!doctype html><meta charset="utf-8"><pre>'+value.replace(/[&<>]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[ch]))+'</pre>';
   await fs.writeFile(output,value,'utf8');return{output,engine:'Convee text adapters'};
  }
@@ -30,8 +30,8 @@ async function convertWithEngine({input,format,output,quality=88,mediaPreset='ba
   args.push(output);await run(status.ffmpeg.command,args,{timeout,maxBuffer:16*1024*1024});return{output,engine:'FFmpeg'}
  }
  if(plan.engine==='libreoffice'){const bin=status.libreoffice.command;await run(bin,['--headless','--convert-to',to,'--outdir',dir,input],{timeout});const generated=path.join(dir,path.basename(input,path.extname(input))+'.'+to);if(generated!==output)await fs.rename(generated,output);return{output,engine:'LibreOffice'}}
- if(plan.engine==='pandoc'){await run('pandoc',[input,'-o',output],{timeout});return{output,engine:'Pandoc'}}
- if(plan.engine==='calibre'){await run('ebook-convert',[input,output],{timeout});return{output,engine:'Calibre'}}
+ if(plan.engine==='pandoc'){await run(status.pandoc.command,[input,'-o',output],{timeout});return{output,engine:'Pandoc'}}
+ if(plan.engine==='calibre'){await run(status.calibre.command,[input,output],{timeout});return{output,engine:'Calibre'}}
  if(plan.engine==='sevenZip'){
   const temp=await fs.mkdtemp(path.join(os.tmpdir(),'convee-archive-'));
   try{await run(status.sevenZip.command,['x',input,'-o'+temp,'-y'],{timeout});await run(status.sevenZip.command,['a','-t'+(to==='gz'?'gzip':to==='bz2'?'bzip2':to),output,'.'],{cwd:temp,timeout});return{output,engine:'7-Zip'}}finally{await fs.rm(temp,{recursive:true,force:true})}
