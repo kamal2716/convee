@@ -15,14 +15,7 @@ async function convertWithEngine({input,format,output,quality=88,mediaPreset='ba
  if(plan.engine==='data')return convertStructured({input,output,from,to});
  if(plan.engine==='text'){
   let value=await fs.readFile(input,'utf8');
-  if(['txt','md'].includes(to)&&['html','htm'].includes(from))value=value.replace(/<script[\\s\\S]*?<\\/script>/gi,'').replace(/<style[\\s\\S]*?<\\/style>/gi,'').replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&');
-  else if(['html','htm'].includes(to))value='<!doctype html><meta charset="utf-8"><pre>'+value.replace(/[&<>]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[ch]))+'</pre>';
-  await fs.writeFile(output,value,'utf8');return{output,engine:'Convee text adapters'};
- }
- if(plan.engine==='data')return convertStructured({input,output,from,to});
- if(plan.engine==='text'){
-  let value=await fs.readFile(input,'utf8');
-  if(['txt','md'].includes(to)&&['html','htm'].includes(from))value=value.replace(/<script[\\s\\S]*?<\\/script>/gi,'').replace(/<style[\\s\\S]*?<\\/style>/gi,'').replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&');
+  if(['txt','md'].includes(to)&&['html','htm'].includes(from))value=value.replace(/<[^>]*>/g,' ').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&');
   else if(['html','htm'].includes(to))value='<!doctype html><meta charset="utf-8"><pre>'+value.replace(/[&<>]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[ch]))+'</pre>';
   await fs.writeFile(output,value,'utf8');return{output,engine:'Convee text adapters'};
  }
