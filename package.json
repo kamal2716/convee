@@ -1,7 +1,65 @@
 {
- "name":"convee","version":"1.1.0","description":"Private offline-first desktop file converter","main":"src/main.js","author":"convee contributors","license":"MIT",
- "scripts":{"start":"electron .","dev":"electron .","dist":"electron-builder","dist:win":"electron-builder --win nsis portable","dist:mac":"electron-builder --mac dmg","dist:linux":"electron-builder --linux AppImage deb"},
- "dependencies":{"pdf-lib":"^1.17.1","sharp":"^0.33.5","uiohook-napi":"^1.5.4"},
- "devDependencies":{"electron":"^33.2.1","electron-builder":"^25.1.8"},
- "build":{"appId":"com.convee.desktop","productName":"convee","directories":{"output":"release"},"files":["src/**/*","package.json"],"asarUnpack":["node_modules/uiohook-napi/**/*","node_modules/sharp/**/*"],"win":{"target":["nsis","portable"],"artifactName":"convee-${version}-${arch}.${ext}"},"nsis":{"oneClick":false,"allowToChangeInstallationDirectory":true,"createDesktopShortcut":true,"createStartMenuShortcut":true},"mac":{"target":["dmg"]},"linux":{"target":["AppImage","deb"]}}
+  "name": "convee",
+  "version": "1.1.0",
+  "description": "Private offline-first desktop file converter",
+  "main": "src/main.js",
+  "author": "convee contributors",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win nsis portable",
+    "dist:mac": "electron-builder --mac dmg",
+    "dist:linux": "electron-builder --linux AppImage deb",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "pdf-lib": "^1.17.1",
+    "sharp": "^0.33.5",
+    "uiohook-napi": "^1.5.4"
+  },
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.convee.desktop",
+    "productName": "convee",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "node_modules/uiohook-napi/**/*",
+      "node_modules/sharp/**/*"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "artifactName": "convee-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ]
+    }
+  }
 }
