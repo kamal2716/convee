@@ -2,7 +2,10 @@ const fs=require('node:fs/promises'),path=require('node:path'),{spawnSync,execFi
 const run=promisify(execFile);const sharp=require('sharp');const {PDFDocument}=require('pdf-lib');
 const imageFormats=['png','jpg','jpeg','webp','avif','tiff','gif','bmp'];
 const textFormats=['txt','md','html','htm','json','csv','xml'];
-const writerFormats=['doc','docx','odt','rtf'];\nconst sheetFormats=['xls','xlsx','ods'];\nconst slideFormats=['ppt','pptx','odp'];\nconst officeFormats=[...writerFormats,...sheetFormats,...slideFormats];
+const writerFormats=['doc','docx','odt','rtf'];
+const sheetFormats=['xls','xlsx','ods'];
+const slideFormats=['ppt','pptx','odp'];
+const officeFormats=[...writerFormats,...sheetFormats,...slideFormats];
 const mediaFormats=['mp4','mov','mkv','webm','avi','wmv','flv','mpeg','mp3','wav','aac','ogg','flac','m4a'];
 const archiveFormats=['zip','7z','tar','gz','bz2','xz'];
 const labels={png:'PNG image',jpg:'JPEG image',jpeg:'JPEG image',webp:'WebP image',avif:'AVIF image',tiff:'TIFF image',gif:'GIF image',bmp:'Bitmap image',txt:'Plain text',md:'Markdown',html:'HTML',json:'JSON',csv:'CSV',xml:'XML',pdf:'PDF'};
@@ -10,7 +13,10 @@ const toolCache={};function tool(name){if(!(name in toolCache)){const cmd=proces
 function engineStatus(){return{sharp:true,pdfLib:true,libreoffice:tool('libreoffice')||tool('soffice'),ffmpeg:tool('ffmpeg'),imagemagick:tool('magick')||tool('convert'),sevenZip:tool('7z'),gdal:tool('ogr2ogr')&&tool('gdalinfo'),pandoc:tool('pandoc'),ghostscript:tool('gs')||tool('gswin64c'),python:tool('python')||tool('python3')}}
 function getFormats(ext){ext=(ext||'').toLowerCase();const engines=engineStatus();
  if(imageFormats.includes(ext))return imageFormats.filter(x=>x!==ext&&!(x==='bmp'||x==='gif')).map(x=>({ext:x,label:labels[x]||x.toUpperCase()+' image',ready:true}));
- if(['txt','md'].includes(ext))return ['txt','md','html'].filter(x=>x!==ext).map(x=>({ext:x,label:labels[x]||x.toUpperCase(),ready:true}));\n if(['html','htm'].includes(ext))return ['txt','md'].map(x=>({ext:x,label:labels[x]||x.toUpperCase(),ready:true}));\n if(ext==='json')return [{ext:'txt',label:'Plain text',ready:true},{ext:'json',label:'Pretty JSON',ready:true}];\n if(['csv','xml'].includes(ext))return [{ext:'txt',label:'Plain text',ready:true}];
+ if(['txt','md'].includes(ext))return ['txt','md','html'].filter(x=>x!==ext).map(x=>({ext:x,label:labels[x]||x.toUpperCase(),ready:true}));
+ if(['html','htm'].includes(ext))return ['txt','md'].map(x=>({ext:x,label:labels[x]||x.toUpperCase(),ready:true}));
+ if(ext==='json')return [{ext:'txt',label:'Plain text',ready:true},{ext:'json',label:'Pretty JSON',ready:true}];
+ if(['csv','xml'].includes(ext))return [{ext:'txt',label:'Plain text',ready:true}];
  if(ext==='pdf')return[{ext:'pdf',label:'Rewrite / optimize PDF',ready:true}];
  if(officeFormats.includes(ext)){const supported=writerFormats.includes(ext)?['pdf','docx','odt','rtf','txt']:sheetFormats.includes(ext)?['pdf','xlsx','ods','csv']:['pdf','pptx','odp'];return supported.filter(x=>x!==ext).map(x=>({ext:x,label:labels[x]||x.toUpperCase(),ready:engines.libreoffice,note:engines.libreoffice?'':'Install LibreOffice'}))}
  if(mediaFormats.includes(ext))return['mp4','webm','mp3','wav','m4a','flac'].filter(x=>x!==ext).map(x=>({ext:x,label:x.toUpperCase()+' media',ready:engines.ffmpeg,note:engines.ffmpeg?'':'Install FFmpeg'}));
