@@ -22,3 +22,9 @@ test('CSV data routes work independently of spreadsheet and GIS routes',()=>{
  assert.equal(planConversion('csv','json',status).available,true);
  assert.equal(planConversion('csv','xlsx',status).available,false);
 });
+
+test('HWP route is limited to pyhwp-supported ODT output',()=>{
+ const status={hwp5odt:{available:true}};
+ assert.equal(planConversion('hwp','odt',status).available,true);
+ assert.equal(planConversion('hwp','pdf',status).available,false);
+});
