@@ -8,7 +8,7 @@ test('route planner exposes native raster route when Sharp codecs are present',(
 
 test('route planner handles CSV as both data and spreadsheet input',()=>{const status={libreoffice:{available:true},data:{available:true}};assert.equal(planConversion('csv','xlsx',status).available,true)});
 test('route planner does not assume ImageMagick PDF delegates exist',()=>{const status={imagemagick:{available:true,readable:{png:true},writable:{png:true}}};assert.equal(planConversion('pdf','png',status).available,false);assert.equal(planConversion('png','pdf',status).available,false)});
-test('route planner does not advertise RAR creation or DGN CAD export',()=>{const status={sevenZip:{available:true},oda:{available:true}};assert.equal(planConversion('zip','rar',status).available,true);assert.equal(planConversion('dgn','dwg',status).available,false)});
+test('route planner does not advertise RAR creation or DGN CAD export',()=>{const status={sevenZip:{available:true},oda:{available:true}};assert.equal(planConversion('zip','rar',status).available,false);assert.equal(planConversion('dgn','dwg',status).available,false)});
 
 test('media route planner separates video, audio and subtitle conversions',()=>{
  const status={ffmpeg:{available:true}};
