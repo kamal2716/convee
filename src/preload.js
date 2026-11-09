@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('convee',{
  saveHistory:items=>ipcRenderer.invoke('history:save',items),
  convert:payload=>ipcRenderer.invoke('files:convert',payload),
  pdfOperation:payload=>ipcRenderer.invoke('pdf:operate',payload),
+ watchFolders:()=>ipcRenderer.invoke('watch:list'),
  watchFolder:cfg=>ipcRenderer.invoke('watch:add',cfg),
  unwatchFolder:id=>ipcRenderer.invoke('watch:remove',id),
  reveal:p=>ipcRenderer.invoke('files:reveal',p),open:p=>ipcRenderer.invoke('files:open',p),
