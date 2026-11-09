@@ -41,7 +41,7 @@ function startGlobalHook(){
   hook.start();
  }catch(err){console.warn('Global drag hook unavailable:',err.message)}
 }
-app.whenReady().then(()=>{
+app.whenReady().then(async()=>{
  ipcMain.handle('files:choose',chooseFiles);
  ipcMain.handle('image:choose',async()=>{const r=await dialog.showOpenDialog(win,{filters:[{name:'Images',extensions:['png','jpg','jpeg','webp','avif','tiff','bmp','gif']}],properties:['openFile']});return r.canceled?null:r.filePaths[0]});
  ipcMain.handle('image:preview',async(_,file)=>{const data=await sharp(file).rotate().resize({width:1400,height:1000,fit:'inside',withoutEnlargement:true}).jpeg({quality:86}).toBuffer();return 'data:image/jpeg;base64,'+data.toString('base64')});
