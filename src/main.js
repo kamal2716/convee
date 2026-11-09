@@ -37,6 +37,7 @@ function startGlobalHook(){
 }
 app.whenReady().then(()=>{
  ipcMain.handle('files:choose',chooseFiles);
+ ipcMain.handle('image:choose',async()=>{const r=await dialog.showOpenDialog(win,{filters:[{name:'Images',extensions:['png','jpg','jpeg','webp','avif','tiff']}],properties:['openFile']});return r.canceled?null:r.filePaths[0]});
  ipcMain.handle('pdf:choose',async()=>{const r=await dialog.showOpenDialog(win,{filters:[{name:'PDF files',extensions:['pdf']}],properties:['openFile','multiSelections']});return r.canceled?[]:r.filePaths});
  ipcMain.handle('folder:choose',async()=>{const r=await dialog.showOpenDialog(win,{properties:['openDirectory','createDirectory']});return r.canceled?null:r.filePaths[0]});
  ipcMain.handle('preferences:load',async()=>{try{return JSON.parse(await fs.readFile(path.join(app.getPath('userData'),'preferences.json'),'utf8'))}catch{return {}}});
