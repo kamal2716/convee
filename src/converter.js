@@ -1,5 +1,9 @@
 const fs=require('node:fs/promises'),path=require('node:path'),os=require('node:os'),{spawnSync,execFile}=require('node:child_process'),{promisify}=require('node:util');
 const run=promisify(execFile);const sharp=require('sharp');const {PDFDocument}=require('pdf-lib');
+const {detectEngines}=require('./engines/engine-manager');
+const {listFormats}=require('./engines/route-planner');
+const {convertWithEngine}=require('./engines/conversion-runner');
+const {structured}=require('./engines/data-converters');
 const imageFormats=['png','jpg','jpeg','webp','avif','tiff','gif','bmp'];
 const textFormats=['txt','md','html','htm','json','csv','xml'];
 const writerFormats=['doc','docx','odt','rtf'];
@@ -11,29 +15,23 @@ const ebookFormats=['epub','mobi','azw3','fb2'];
 const archiveFormats=['zip','7z','tar','gz','bz2','xz'];
 const labels={png:'PNG image',jpg:'JPEG image',jpeg:'JPEG image',webp:'WebP image',avif:'AVIF image',tiff:'TIFF image',gif:'GIF image',bmp:'Bitmap image',txt:'Plain text',md:'Markdown',html:'HTML',json:'JSON',csv:'CSV',xml:'XML',pdf:'PDF'};
 const toolCache={};function tool(name){if(!(name in toolCache)){const cmd=process.platform==='win32'?'where':'which';toolCache[name]=spawnSync(cmd,[name],{stdio:'ignore'}).status===0}return toolCache[name]}
-function engineStatus(){return{sharp:true,pdfLib:true,libreoffice:tool('libreoffice')||tool('soffice'),ffmpeg:tool('ffmpeg'),imagemagick:tool('magick')||tool('convert'),sevenZip:tool('7z'),gdal:tool('ogr2ogr')&&tool('gdalinfo'),pandoc:tool('pandoc'),ghostscript:tool('gs')||tool('gswin64c'),python:tool('python')||tool('python3'),calibre:tool('ebook-convert')}}
-function getFormats(ext){ext=(ext||'').toLowerCase();const engines=engineStatus();
- if(imageFormats.includes(ext))return imageFormats.filter(x=>x!==ext&&!(x==='bmp'||x==='gif')).map(x=>({ext:x,label:labels[x]||x.toUpperCase()+' image',ready:true}));
- if(['txt','md'].includes(ext))return ['txt','md','html'].filter(x=>x!==ext).map(x=>({ext:x,label:labels[x]||x.toUpperCase(),ready:true}));
- if(['html','htm'].includes(ext))return ['txt','md'].map(x=>({ext:x,label:labels[x]||x.toUpperCase(),ready:true}));
- if(ext==='json')return [{ext:'txt',label:'Plain text',ready:true},{ext:'json',label:'Pretty JSON',ready:true}];
- if(['csv','xml'].includes(ext))return [{ext:'txt',label:'Plain text',ready:true}];
- if(ext==='pdf')return[{ext:'pdf',label:'Optimize PDF',ready:true},{ext:'png',label:'PDF page images',ready:false,note:'PDF rendering engine not installed'}];
- if(ebookFormats.includes(ext))return ['epub','mobi','azw3','fb2','pdf','docx','txt'].filter(x=>x!==ext).map(x=>({ext:x,label:x.toUpperCase(),ready:engines.calibre,note:engines.calibre?'':'Install Calibre'}));
- if(officeFormats.includes(ext)){const supported=writerFormats.includes(ext)?['pdf','docx','odt','rtf','txt']:sheetFormats.includes(ext)?['pdf','xlsx','ods','csv']:['pdf','pptx','odp'];return supported.filter(x=>x!==ext).map(x=>({ext:x,label:labels[x]||x.toUpperCase(),ready:engines.libreoffice,note:engines.libreoffice?'':'Install LibreOffice'}))}
- if(mediaFormats.includes(ext))return['mp4','webm','mp3','wav','m4a','flac'].filter(x=>x!==ext).map(x=>({ext:x,label:x.toUpperCase()+' media',ready:engines.ffmpeg,note:engines.ffmpeg?'':'Install FFmpeg'}));
- if(archiveFormats.includes(ext))return [];
- return [];
-}
+function engineStatus(){const detected=detectEngines();return Object.fromEntries(Object.entries(detected).map(([k,v])=>[k,v.available]));}
+function getFormats(ext){return listFormats(ext)}
 async function convertFile({input,format,outputDir,quality=88,mediaPreset='balanced',crop}){const ext=path.extname(input).slice(1).toLowerCase(),target=format.toLowerCase(),base=path.basename(input,path.extname(input)),folder=outputDir||path.dirname(input);await fs.mkdir(folder,{recursive:true});let output=path.join(folder,base+'.'+target);if(output===input)output=path.join(folder,base+'-converted.'+target);let suffix=1;while(true){try{await fs.access(output);output=path.join(folder,base+'-converted-'+suffix+'.'+target);suffix++}catch{break}}
  if(imageFormats.includes(ext)&&imageFormats.includes(target)&&!['bmp','gif'].includes(target)){let p=sharp(input,{animated:target==='gif'}).rotate();if(crop){const meta=await p.metadata();const left=Math.max(0,Math.min(meta.width-1,Math.round(crop.left*meta.width))),top=Math.max(0,Math.min(meta.height-1,Math.round(crop.top*meta.height))),width=Math.max(1,Math.min(meta.width-left,Math.round(crop.width*meta.width))),height=Math.max(1,Math.min(meta.height-top,Math.round(crop.height*meta.height)));p=p.extract({left,top,width,height})}if(['jpg','jpeg'].includes(target))p=p.jpeg({quality:+quality,mozjpeg:true});else if(target==='png')p=p.png({compressionLevel:9});else if(target==='webp')p=p.webp({quality:+quality});else if(target==='avif')p=p.avif({quality:+quality});else if(target==='tiff')p=p.tiff({quality:+quality});await p.toFile(output);return{output,message:'Image converted successfully'}}
- if(textFormats.includes(ext)&&textFormats.includes(target)){const raw=await fs.readFile(input,'utf8');let value=raw;if(target==='json')value=JSON.stringify(JSON.parse(raw),null,2);if(target==='html'&&!['html','htm'].includes(ext))value='<!doctype html><meta charset="utf-8"><pre>'+escapeHtml(raw)+'</pre>';if(['txt','md'].includes(target)&&['html','htm'].includes(ext))value=raw.replace(/<script[\s\S]*?<\/script>/gi,'').replace(/<style[\s\S]*?<\/style>/gi,'').replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&');await fs.writeFile(output,value,'utf8');return{output,message:'Text conversion complete'}}
- if(ext==='pdf'&&target==='pdf'){if(statusGhostscript()){const gs=tool('gswin64c')?'gswin64c':tool('gswin32c')?'gswin32c':'gs';await run(gs,['-sDEVICE=pdfwrite','-dCompatibilityLevel=1.5','-dPDFSETTINGS=/ebook','-dNOPAUSE','-dBATCH','-dQUIET','-sOutputFile='+output,input],{timeout:300000});return{output,message:'PDF compressed with Ghostscript'}}const doc=await PDFDocument.load(await fs.readFile(input));await fs.writeFile(output,await doc.save({useObjectStreams:true,objectsPerTick:50}));return{output,message:'PDF structure optimized (install Ghostscript for image recompression)'}}
- const status=engineStatus();
- if(officeFormats.includes(ext)&&status.libreoffice){const bin=tool('libreoffice')?'libreoffice':'soffice';const temp=await fs.mkdtemp(path.join(os.tmpdir(),'convee-'));try{await run(bin,['--headless','--convert-to',target,'--outdir',temp,input],{timeout:120000});const generated=path.join(temp,base+'.'+target);await fs.rename(generated,output)}finally{await fs.rm(temp,{recursive:true,force:true})}return{output,message:'Office document converted with LibreOffice'}}
- if(mediaFormats.includes(ext)&&mediaFormats.includes(target)&&status.ffmpeg){const args=['-y','-i',input,'-map_metadata','0'];if(['mp4','mov','mkv','webm','avi'].includes(target)){const preset=mediaPreset==='small'?['-crf','30','-preset','fast']:mediaPreset==='high'?['-crf','18','-preset','slow']:['-crf','23','-preset','medium'];args.push('-c:v','libx264',...preset,'-c:a','aac')}else if(['mp3','m4a','aac','ogg','opus','flac','wav'].includes(target))args.push('-vn');args.push(output);await run('ffmpeg',args,{timeout:300000});return{output,message:'Media converted with FFmpeg'}}
- if(archiveFormats.includes(ext)&&archiveFormats.includes(target)&&status.sevenZip){await run('7z',['a','-t'+target,output,input],{timeout:300000});return{output,message:'Archive created with 7-Zip'}}
- throw new Error('No compatible local engine is available for this format pair. Check Settings → Conversion engines and install the suggested engine.');
+ if(structured.has(ext)&&structured.has(target))return convertWithEngine({input,format:target,output,quality,mediaPreset});
+ if(ext==='pdf'&&target==='pdf'){
+  if(statusGhostscript()){
+   const gs=tool('gswin64c')?'gswin64c':tool('gswin32c')?'gswin32c':'gs';
+   await run(gs,['-sDEVICE=pdfwrite','-dCompatibilityLevel=1.5','-dPDFSETTINGS=/ebook','-dNOPAUSE','-dBATCH','-dQUIET','-sOutputFile='+output,input],{timeout:300000});
+   return{output,message:'PDF compressed with Ghostscript'};
+  }
+  const doc=await PDFDocument.load(await fs.readFile(input));
+  await fs.writeFile(output,await doc.save({useObjectStreams:true,objectsPerTick:50}));
+  return{output,message:'PDF structure optimized (install Ghostscript for image recompression)'};
+ }
+ // All non-native conversions use the same route planner and execution adapters.
+ return convertWithEngine({input,format:target,output,quality,mediaPreset});
 }
 function statusGhostscript(){return tool('gs')||tool('gswin64c')||tool('gswin32c')}
 function escapeHtml(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}

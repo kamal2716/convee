@@ -1,0 +1,23 @@
+// Explicit engine routes prevent the UI from promising unsupported format pairs.
+const any=()=>true;
+const engineRoutes=[
+ {id:'text-basic',engine:'text',from:['documents'],to:['documents'],extensions:(a,b)=>['txt','md','html','htm'].includes(a)&&['txt','md','html','htm'].includes(b)},
+ {id:'structured-data',engine:'data',from:['data'],to:['data'],extensions:(a,b)=>['csv','tsv','json','xml','yaml','yml','toml'].includes(a)&&['csv','tsv','json','xml','yaml','yml','toml'].includes(b)},
+ {id:'image-raster',engine:'sharp',from:['images'],to:['images'],extensions:(a,b)=>['jpg','jpeg','png','webp','avif','tiff'].includes(a)&&['jpg','jpeg','png','webp','avif','tiff'].includes(b)},
+ {id:'image-extended',engine:'imagemagick',from:['images'],to:['images'],extensions:any},
+ {id:'pdf-raster',engine:'imagemagick',from:['documents','images'],to:['images','documents'],extensions:(a,b)=>(a==='pdf'&&['png','jpg','jpeg','tiff','webp'].includes(b))||(['png','jpg','jpeg','tiff','webp'].includes(a)&&b==='pdf')},
+ {id:'office',engine:'libreoffice',from:['documents','spreadsheets','presentations'],to:['documents','spreadsheets','presentations'],extensions:(a,b)=>['doc','docx','docm','dot','dotx','odt','ott','rtf','wps','wpd','txt','html','htm','xls','xlsx','xlsm','xlsb','xlt','xltx','ods','csv','tsv','ppt','pptx','pptm','pps','ppsx','odp','otp','pdf'].includes(a)&&['doc','docx','odt','rtf','txt','html','htm','xls','xlsx','ods','csv','tsv','ppt','pptx','odp','pdf'].includes(b)},
+ {id:'pandoc',engine:'pandoc',from:['documents'],to:['documents'],extensions:(a,b)=>['txt','md','html','htm','docx','odt','epub','rst','org','tex'].includes(a)&&['txt','md','html','docx','odt','epub','rst','org','tex'].includes(b)},
+ {id:'ebooks',engine:'calibre',from:['documents'],to:['documents'],extensions:(a,b)=>['epub','mobi','azw3','azw','kfx','fb2','txt','pdf','docx','html','rtf','odt'].includes(a)&&['epub','mobi','azw3','azw','kfx','fb2','txt','pdf','docx','html','rtf','odt'].includes(b)},
+ {id:'video-transcode',engine:'ffmpeg',from:['video'],to:['video'],extensions:(a,b)=>['mp4','mov','mkv','webm','avi','wmv','flv','mpeg','mpg','m4v','3gp','ogv','vob','ts','mts','m2ts'].includes(a)&&['mp4','mov','mkv','webm','avi','wmv','flv','mpeg','mpg','m4v','3gp','ogv'].includes(b)},
+ {id:'audio-transcode',engine:'ffmpeg',from:['video','audio'],to:['audio'],extensions:(a,b)=>['mp4','mov','mkv','webm','avi','wmv','flv','mpeg','mpg','m4v','3gp','ogv','vob','ts','mts','m2ts','mp3','wav','aac','ogg','opus','flac','m4a','wma','aiff','aif','ape','alac','amr','ac3','eac3','dts','caf','au'].includes(a)&&['mp3','wav','aac','ogg','opus','flac','m4a','aiff','aif','ac3','eac3'].includes(b)},
+ {id:'subtitle-transcode',engine:'ffmpeg',from:['subtitles'],to:['subtitles'],extensions:(a,b)=>['srt','ass','ssa','vtt'].includes(a)&&['srt','ass','ssa','vtt'].includes(b)},
+ {id:'archive',engine:'sevenZip',from:['archives'],to:['archives'],extensions:(a,b)=>['zip','7z','rar','tar','gz','bz2','xz'].includes(a)&&['zip','7z','tar','gz','bz2','xz'].includes(b)},
+ {id:'gis',engine:'gdal',from:['gis'],to:['gis'],extensions:(a,b)=>['shp','geojson','kml','kmz','gpkg','gpx','csv'].includes(a)&&['shp','geojson','kml','kmz','gpkg','gpx','csv'].includes(b)},
+ {id:'cad',engine:'oda',from:['cad'],to:['cad'],extensions:(a,b)=>['dwg','dxf'].includes(a)&&['dwg','dxf'].includes(b)},
+ {id:'3d',engine:'assimp',from:['models3d'],to:['models3d'],extensions:(a,b)=>['obj','stl','ply','fbx','3ds','dae','gltf','glb'].includes(a)&&['obj','stl','ply','fbx','3ds','dae','gltf','glb'].includes(b)},
+ {id:'3d-blender',engine:'blender',from:['models3d'],to:['models3d'],extensions:(a,b)=>['blend','obj','stl','gltf','glb','fbx'].includes(a)&&['obj','stl','gltf','glb','fbx'].includes(b)},
+ {id:'fonts',engine:'fontforge',from:['fonts'],to:['fonts'],extensions:(a,b)=>['ttf','otf','woff','woff2','pfa','pfb','sfd'].includes(a)&&['ttf','otf','woff','woff2','pfa','pfb','sfd'].includes(b)},
+
+];
+module.exports={engineRoutes};

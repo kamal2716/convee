@@ -4,10 +4,12 @@ const fs=require('node:fs/promises');
 const os=require('node:os');
 const path=require('node:path');
 const {getFormats,convertFile}=require('../src/converter');
-test('only offers safe built-in text conversions',()=>{
+test('format catalogue includes text conversions and does not claim unsupported HWP routes',()=>{
  const formats=getFormats('txt').map(x=>x.ext);
- assert.deepEqual(formats,['md','html']);
- assert.deepEqual(getFormats('hwp'),[]);
+ assert.ok(formats.includes('md'));
+ assert.ok(formats.includes('html'));
+ assert.ok(formats.includes('htm'));
+ assert.equal(getFormats('hwp').length,0);
 });
 test('pretty-prints valid JSON into a new file',async()=>{
  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'convee-test-'));
@@ -39,4 +41,34 @@ test('merge PDFs locally and preserve page count',async()=>{
 test('extract selected PDF page ranges',async()=>{
  const dir=await fs.mkdtemp(path.join(os.tmpdir(),'convee-pdf-'));
  try{const d=await PDFDocument.create();d.addPage();d.addPage();d.addPage();const input=path.join(dir,'three.pdf');await fs.writeFile(input,await d.save());const output=path.join(dir,'extract.pdf');await pdfOperation({operation:'extract',inputs:[input],output,pages:'1,3'});const result=await PDFDocument.load(await fs.readFile(output));assert.equal(result.getPageCount(),2)}finally{await fs.rm(dir,{recursive:true,force:true})}
+});
+
+const sharp=require('sharp');
+test('visual crop coordinates produce a cropped raster output',async()=>{
+ const dir=await fs.mkdtemp(path.join(os.tmpdir(),'convee-crop-'));
+ try{
+  const input=path.join(dir,'source.png');
+  await sharp({create:{width:100,height:80,channels:3,background:'#ff0000'}}).png().toFile(input);
+  const result=await convertFile({input,format:'png',crop:{left:.25,top:.25,width:.5,height:.5}});
+  const meta=await sharp(result.output).metadata();
+  assert.equal(meta.width,50);assert.equal(meta.height,40);
+ }finally{await fs.rm(dir,{recursive:true,force:true})}
+});
+test('Markdown is rendered to HTML by the built-in route',async()=>{
+ const dir=await fs.mkdtemp(path.join(os.tmpdir(),'convee-md-'));
+ try{
+  const input=path.join(dir,'notes.md');await fs.writeFile(input,'# Hello\n\n**Convee** works.');
+  const result=await convertFile({input,format:'html'});
+  const html=await fs.readFile(result.output,'utf8');
+  assert.ok(html.includes('<h1>Hello</h1>'));assert.ok(html.includes('<strong>Convee</strong>'));
+ }finally{await fs.rm(dir,{recursive:true,force:true})}
+});
+test('CSV converts to JSON through the public conversion API',async()=>{
+ const dir=await fs.mkdtemp(path.join(os.tmpdir(),'convee-csv-'));
+ try{
+  const input=path.join(dir,'rows.csv');await fs.writeFile(input,'name,city\nAda,Chennai\n');
+  const result=await convertFile({input,format:'json'});
+  const rows=JSON.parse(await fs.readFile(result.output,'utf8'));
+  assert.equal(rows[0].city,'Chennai');
+ }finally{await fs.rm(dir,{recursive:true,force:true})}
 });

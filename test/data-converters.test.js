@@ -1,0 +1,8 @@
+const test=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs/promises');const os=require('node:os');const path=require('node:path');
+const {convertStructured}=require('../src/engines/data-converters');
+async function fixture(from,to,source,check){const dir=await fs.mkdtemp(path.join(os.tmpdir(),'convee-data-'));try{const input=path.join(dir,'input.'+from),output=path.join(dir,'output.'+to);await fs.writeFile(input,source);await convertStructured({input,output,from,to});await check(await fs.readFile(output,'utf8'))}finally{await fs.rm(dir,{recursive:true,force:true})}}
+test('CSV to JSON preserves quoted commas and headers',async()=>fixture('csv','json','name,city\n"Doe, Jane",Chennai\n',async out=>{const rows=JSON.parse(out);assert.equal(rows[0].name,'Doe, Jane');assert.equal(rows[0].city,'Chennai')}));
+test('JSON to CSV writes headers and escaped fields',async()=>fixture('json','csv',JSON.stringify([{name:'Jane, Doe',city:'Chennai'}]),async out=>{assert.match(out,/name,city/);assert.match(out,/'Jane, Doe'|"Jane, Doe"/)}));
+test('YAML to JSON preserves nested data',async()=>fixture('yaml','json','user:\n  name: Ada\n  active: true\n',async out=>{const v=JSON.parse(out);assert.equal(v.user.name,'Ada');assert.equal(v.user.active,true)}));
+test('XML to JSON parses nested elements',async()=>fixture('xml','json','<root><item>one</item><item>two</item></root>',async out=>{const v=JSON.parse(out);assert.deepEqual(v.root.item,['one','two'])}));
+test('TOML to YAML preserves scalar values',async()=>fixture('toml','yaml','title = "Demo"\ncount = 3\n',async out=>{assert.match(out,/title: Demo/);assert.match(out,/count: 3/)}));

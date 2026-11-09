@@ -2,7 +2,7 @@ name: Windows desktop package
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, feature/complete-format-engines]
     paths:
       - 'src/**'
       - 'package.json'
@@ -24,7 +24,7 @@ jobs:
         shell: pwsh
         run: |
           $pythonPath = (python -c "import sys; print(sys.executable)").Trim()
-          npm config set python $pythonPath
+          "npm_config_python=$pythonPath" | Out-File -FilePath $env:GITHUB_ENV -Append
       - run: npm install
       - run: npm test
       - run: npm run dist:win
