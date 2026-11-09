@@ -33,14 +33,14 @@ async function convertWithEngine({input,format,output,quality=88,mediaPreset='ba
   if(videoExt.has(to)){const q=mediaPreset==='small'?'30':mediaPreset==='high'?'18':'23';args.push('-c:v','libx264','-crf',q,'-preset',mediaPreset==='high'?'slow':'medium','-c:a','aac')}
   else if(audioExt.has(to)){args.push('-vn');if(to==='mp3')args.push('-c:a','libmp3lame','-q:a','2');else if(to==='aac'||to==='m4a')args.push('-c:a','aac','-b:a','192k');else if(to==='opus')args.push('-c:a','libopus','-b:a','160k')}
   else if(to==='srt'||to==='ass'||to==='vtt')args.push('-map','0:s:0');
-  args.push(output);await run('ffmpeg',args,{timeout,maxBuffer:16*1024*1024});return{output,engine:'FFmpeg'}
+  args.push(output);await run(status.ffmpeg.command,args,{timeout,maxBuffer:16*1024*1024});return{output,engine:'FFmpeg'}
  }
  if(plan.engine==='libreoffice'){const bin=status.libreoffice.command;await run(bin,['--headless','--convert-to',to,'--outdir',dir,input],{timeout});const generated=path.join(dir,path.basename(input,path.extname(input))+'.'+to);if(generated!==output)await fs.rename(generated,output);return{output,engine:'LibreOffice'}}
  if(plan.engine==='pandoc'){await run('pandoc',[input,'-o',output],{timeout});return{output,engine:'Pandoc'}}
  if(plan.engine==='calibre'){await run('ebook-convert',[input,output],{timeout});return{output,engine:'Calibre'}}
  if(plan.engine==='sevenZip'){
   const temp=await fs.mkdtemp(path.join(os.tmpdir(),'convee-archive-'));
-  try{await run('7z',['x',input,'-o'+temp,'-y'],{timeout});await run('7z',['a','-t'+(to==='gz'?'gzip':to==='bz2'?'bzip2':to),output,'.'],{cwd:temp,timeout});return{output,engine:'7-Zip'}}finally{await fs.rm(temp,{recursive:true,force:true})}
+  try{await run(status.sevenZip.command,['x',input,'-o'+temp,'-y'],{timeout});await run(status.sevenZip.command,['a','-t'+(to==='gz'?'gzip':to==='bz2'?'bzip2':to),output,'.'],{cwd:temp,timeout});return{output,engine:'7-Zip'}}finally{await fs.rm(temp,{recursive:true,force:true})}
  }
  if(plan.engine==='gdal'){
   const drivers={shp:'ESRI Shapefile',geojson:'GeoJSON',kml:'KML',kmz:'LIBKML',gpkg:'GPKG',gpx:'GPX',csv:'CSV'};
@@ -49,8 +49,16 @@ async function convertWithEngine({input,format,output,quality=88,mediaPreset='ba
  }
  if(plan.engine==='assimp'){await run('assimp',['export',input,output],{timeout});return{output,engine:'Assimp'}}
  if(plan.engine==='blender'){const script="import bpy,sys\nsrc=sys.argv[-2]; dst=sys.argv[-1]\nbpy.ops.wm.open_mainfile(filepath=src)\next=dst.rsplit('.',1)[-1].lower()\nif ext=='obj': bpy.ops.wm.obj_export(filepath=dst)\nelif ext=='stl': bpy.ops.wm.stl_export(filepath=dst)\nelif ext in ('gltf','glb'): bpy.ops.export_scene.gltf(filepath=dst)\n";const tmp=path.join(os.tmpdir(),'convee-blender-export.py');await fs.writeFile(tmp,script);try{await run('blender',['-b','--python',tmp,'--',input,output],{timeout})}finally{await fs.rm(tmp,{force:true})}return{output,engine:'Blender'}}
- if(plan.engine==='oda')throw new Error('ODA File Converter is detected, but its batch folder adapter must be configured for this machine before CAD export is enabled.');
- if(plan.engine==='fontforge')throw new Error('FontForge is detected, but font conversion requires a verified per-format script adapter; this pair is not enabled yet.');
+ if(plan.engine==='oda'){
+  if(!['dwg','dxf'].includes(from)||!['dwg','dxf'].includes(to))throw new Error('ODA adapter supports DWG and DXF pairs only.');
+  const inputDir=await fs.mkdtemp(path.join(os.tmpdir(),'convee-cad-in-')),outputDir=await fs.mkdtemp(path.join(os.tmpdir(),'convee-cad-out-'));
+  try{await fs.copyFile(input,path.join(inputDir,path.basename(input)));await run(status.oda.command,[inputDir,outputDir,'ACAD2018',to.toUpperCase(),'0','1'],{timeout});const files=await fs.readdir(outputDir);const generated=files.find(f=>path.extname(f).toLowerCase()==='.'+to);if(!generated)throw new Error('ODA did not produce a .'+to+' file. Check source compatibility and ODA version.');await fs.copyFile(path.join(outputDir,generated),output);return{output,engine:'ODA File Converter'}}finally{await fs.rm(inputDir,{recursive:true,force:true});await fs.rm(outputDir,{recursive:true,force:true})}
+ }
+ if(plan.engine==='fontforge'){
+  const supported=new Set(['ttf','otf','woff','woff2','pfa','pfb','sfd']);
+  if(!supported.has(from)||!supported.has(to))throw new Error('FontForge adapter supports TTF, OTF, WOFF, WOFF2, PFA, PFB and SFD only.');
+  await run(status.fontforge.command,['-lang=ff','-c','Open($1); Generate($2)',input,output],{timeout});return{output,engine:'FontForge'};
+ }
  throw new Error('The selected engine route has no execution adapter yet.');
 }
 module.exports={convertWithEngine};
