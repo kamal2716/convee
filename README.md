@@ -62,3 +62,22 @@ MIT.
 Convee opens with its signature navy, cream and coral palette. Open **Settings → Colour Studio** to change the donut accent, donut surface, app canvas and warm highlight. Each colour has a full-spectrum system colour picker, editable RGB channels and a hex field. The live preview updates as you adjust a value. Donut opacity and cream/navy workspace themes are configurable too.
 
 Appearance preferences are saved locally in the app's user-data folder and synchronized to the floating donut. No colour settings or file data are sent to a server.
+
+
+## Power tools in progress
+
+The desktop workspace now includes:
+- Image crop by normalized crop rectangle, with Sharp processing and output conversion.
+- PDF merge, split-into-pages, selected-page extraction and PDF optimization.
+- Watch folders using Chokidar with write-completion detection.
+- FFmpeg balanced, smaller-file and high-quality video profiles.
+- Calibre e-book conversion when `ebook-convert` is installed.
+- A Windows NSIS installer and portable target through `npm run dist:win`.
+
+### Optional engines
+
+Install FFmpeg for audio/video; LibreOffice for office documents; Calibre for EPUB/MOBI/AZW3/FB2; Ghostscript for image-aware PDF recompression. These are separate local applications and are not bundled automatically.
+
+### Important implementation limits
+
+The crop tool currently accepts crop percentages rather than providing a drag-to-select visual crop canvas. PDF page rendering to images, true PDF compression without Ghostscript, OCR, CAD conversion and geospatial conversion are not yet available. Native global modifier/drag interaction and the installer still require hands-on Windows testing. The app should not be described as supporting all 270 formats until each adapter is implemented and tested.
