@@ -16,7 +16,39 @@ async function openFormats(file){if(!file)return;activeFile=file;$('#modalTitle'
 async function runConversion(file,format){formatModal.classList.add('hidden');file.status='Converting…';render();try{const result=await window.convee.convert({input:file.path,format,mediaPreset:$('#mediaPreset')?.value||'balanced'});file.status='Converted';history.unshift({name:file.name,output:result.output,format:format.toUpperCase(),date:new Date().toLocaleString()});await window.convee.saveHistory(history);files=files.filter(f=>f.id!==file.id);render();renderHistory();toast(result.message+' · '+result.output.split(/[\\/]/).pop())}catch(e){file.status='Could not convert';render();toast(e.message)}}
 
 async function openBatch(){if(!files.length){toast('Add files to the queue first');return}const ext=files[0].ext;const compatible=files.filter(f=>f.ext===ext);if(compatible.length!==files.length)toast('Batch will include '+compatible.length+' '+ext.toUpperCase()+' files; other formats are skipped');const grid=$('#formatGrid');$('#modalTitle').textContent='Convert '+compatible.length+' files';$('#modalSub').textContent='Choose one output format for this batch.';grid.innerHTML='<div class="empty">Loading formats…</div>';formatModal.classList.remove('hidden');const options=await window.convee.formats(ext);grid.innerHTML=options.map(f=>'<button class="format-option" '+(!f.ready?'disabled':'')+' data-batch-format="'+f.ext+'"><b>.'+f.ext.toUpperCase()+'</b><span>'+esc(f.label)+'</span></button>').join('')||'<div class="empty">No compatible formats found.</div>';grid.querySelectorAll('[data-batch-format]').forEach(b=>b.onclick=()=>runBatch(compatible,b.dataset.batchFormat))}
-async function runBatch(batch,format){formatModal.classList.add('hidden');toast('Converting '+batch.length+' files…');const results=await Promise.allSettled(batch.map(async file=>{file.status='Converting…';const result=await window.convee.convert({input:file.path,format,mediaPreset:$('#mediaPreset')?.value||'balanced'});return{file,result}}));const done=[];for(const item of results){if(item.status==='fulfilled'){const {file,result}=item.value;done.push(file.id);history.unshift({name:file.name,output:result.output,format:format.toUpperCase(),date:new Date().toLocaleString()})}else toast(item.reason?.message||'A file could not be converted')}files=files.filter(f=>!done.includes(f.id));await window.convee.saveHistory(history);render();renderHistory();toast(done.length+' of '+batch.length+' files converted')}
+let batchCancelRequested=false,batchRunning=false;
+const cancelBatchButton=$('#cancelBatch');
+if(cancelBatchButton)cancelBatchButton.onclick=()=>{batchCancelRequested=true;cancelBatchButton.disabled=true;$('#queueHint').textContent='Finishing current file(s), then stopping…'};
+async function runBatch(batch,format){
+ formatModal.classList.add('hidden');batchCancelRequested=false;batchRunning=true;
+ if(cancelBatchButton){cancelBatchButton.hidden=false;cancelBatchButton.disabled=false}
+ const queueHint=$('#queueHint');let completed=0,failed=0,processed=0;const succeeded=[];
+ const concurrency=2;
+ queueHint.textContent='Starting batch · 0 / '+batch.length;
+ // A small worker pool avoids launching an unbounded number of memory-heavy conversions.
+ async function worker(){
+  while(!batchCancelRequested){
+   const index=processed++;if(index>=batch.length)return;
+   const file=batch[index];file.status='Converting…';render();
+   try{
+    const result=await window.convee.convert({input:file.path,format,mediaPreset:$('#mediaPreset')?.value||'balanced'});
+    completed++;succeeded.push(file.id);
+    history.unshift({name:file.name,output:result.output,format:format.toUpperCase(),date:new Date().toLocaleString()});
+    file.status='Converted';
+   }catch(error){failed++;file.status='Failed';file.error=error.message}
+   queueHint.textContent='Batch progress · '+(completed+failed)+' / '+batch.length+' · '+completed+' done · '+failed+' failed';
+   render();
+  }
+ }
+ await Promise.all(Array.from({length:Math.min(concurrency,batch.length)},()=>worker()));
+ batchRunning=false;
+ if(cancelBatchButton){cancelBatchButton.hidden=true;cancelBatchButton.disabled=false}
+ files=files.filter(f=>!succeeded.includes(f.id));
+ await window.convee.saveHistory(history);render();renderHistory();
+ const stopped=batchCancelRequested?' · stopped by user':'';
+ queueHint.textContent='Batch finished · '+completed+' converted · '+failed+' failed'+(batch.length-completed-failed?' · '+(batch.length-completed-failed)+' not started':'');
+ toast(completed+' of '+batch.length+' files converted'+stopped);
+}
 
 function renderHistory(){const el=$('#historyList');if(!history.length){el.innerHTML='<div class="empty"><div class="empty-icon">◷</div><b>Nothing converted yet</b><span>Your finished files will show up here.</span></div>';return}el.innerHTML=history.map(h=>'<div class="file-row"><div class="file-icon">'+h.format+'</div><div class="file-info"><b>'+esc(h.output.split(/[\\/]/).pop())+'</b><small>'+esc(h.date)+' · '+esc(h.name)+'</small></div><div class="file-actions"><button class="small-btn" data-open="'+esc(h.output)+'">Open</button><button class="small-btn" data-reveal="'+esc(h.output)+'">Show in folder</button></div></div>').join('');el.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>window.convee.open(b.dataset.open));el.querySelectorAll('[data-reveal]').forEach(b=>b.onclick=()=>window.convee.reveal(b.dataset.reveal))}
 $('#closeModal').onclick=()=>formatModal.classList.add('hidden');formatModal.querySelector('.modal-backdrop').onclick=()=>formatModal.classList.add('hidden');document.addEventListener('keydown',e=>{if(e.key==='Escape')formatModal.classList.add('hidden')});
