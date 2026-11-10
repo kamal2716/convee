@@ -72,3 +72,12 @@ test('CSV converts to JSON through the public conversion API',async()=>{
   assert.equal(rows[0].city,'Chennai');
  }finally{await fs.rm(dir,{recursive:true,force:true})}
 });
+
+test('rotate PDF pages clockwise without changing page count',async()=>{
+ const dir=await fs.mkdtemp(path.join(os.tmpdir(),'convee-pdf-'));
+ try{const d=await PDFDocument.create();d.addPage();const input=path.join(dir,'source.pdf');await fs.writeFile(input,await d.save());const output=path.join(dir,'rotated.pdf');await pdfOperation({operation:'rotate',inputs:[input],output,rotation:90});const result=await PDFDocument.load(await fs.readFile(output));assert.equal(result.getPageCount(),1);assert.equal(result.getPage(0).getRotation().angle,90)}finally{await fs.rm(dir,{recursive:true,force:true})}
+});
+test('add page numbers to every PDF page',async()=>{
+ const dir=await fs.mkdtemp(path.join(os.tmpdir(),'convee-pdf-'));
+ try{const d=await PDFDocument.create();d.addPage();d.addPage();const input=path.join(dir,'source.pdf');await fs.writeFile(input,await d.save());const output=path.join(dir,'numbered.pdf');const result=await pdfOperation({operation:'number',inputs:[input],output});const numbered=await PDFDocument.load(await fs.readFile(result.output));assert.equal(numbered.getPageCount(),2);assert.ok(numbered.getPage(0).getSize().height>0)}finally{await fs.rm(dir,{recursive:true,force:true})}
+});
