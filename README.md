@@ -46,7 +46,7 @@ A format appearing in the catalogue does **not** mean every conversion involving
 | Video/audio | FFmpeg adapter with format-specific output codec maps and quality presets |
 | Subtitles | FFmpeg SRT/ASS/SSA/VTT conversions |
 | Archives | 7-Zip adapter for supported archive extraction/repacking pairs; RAR is read-only |
-| PDF | Merge, split, selected-page extraction and PDF rewrite/optimization; Ghostscript improves image-aware compression |
+| PDF | Merge, split, selected-page extraction, page rotation, page numbering and PDF rewrite/optimization; Ghostscript improves image-aware compression |
 | GIS | GDAL adapter for selected vector formats when installed |
 | CAD | ODA File Converter adapter for DWG/DXF pairs when installed |
 | 3D | Assimp and Blender adapters for selected mesh/model formats when installed |
@@ -81,7 +81,7 @@ The Windows package workflow unpacks these runtime binaries from Electron ASAR. 
 - Batch conversion and recent conversion history.
 - Global modifier + drag floating format donut (native input hook; operating-system testing is still required).
 - Visual drag-to-select image crop and export.
-- PDF merge, split and page extraction.
+- PDF merge, split, page extraction, clockwise page rotation and page numbering.
 - Persistent watch-folder rules, restored when Convee starts.
 - Balanced, smaller-file and high-quality media presets.
 - Navy/cream themes and editable RGB/hex palette controls.
@@ -130,7 +130,7 @@ MIT.
 
 - **Exact duplicate finder:** scans a chosen folder locally, groups byte-identical files by SHA-256, estimates reclaimable space, and lets you reveal files for manual review. It never deletes files.
 - **Image metadata inspector:** reports image dimensions, colour space, alpha, page count, and presence of EXIF, ICC, IPTC and XMP metadata.
-- **Metadata-free image export:** writes a separate copy without carrying embedded metadata. Animated and multi-page images are explicitly rejected by this tool to avoid accidental frame loss.
+- **Metadata-free image export:** writes a separate copy without carrying embedded metadata. Animated and multi-page images are explicitly rejected by this tool to avoid accidental frame loss. Removing an ICC colour profile can affect colour appearance in some applications.
 - **Batch conversion queue:** processes files with a bounded worker pool, shows progress and per-file failures, and lets the user stop files that have not started. Active conversions finish safely.
 - **History controls:** export the local conversion history to CSV or clear the history without deleting converted output files.
 - **Smart format picks:** highlights a preferred output where Convee has a configured route; recommendations are heuristics, not guarantees of lossless conversion.
