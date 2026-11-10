@@ -131,5 +131,7 @@ MIT.
 - **Exact duplicate finder:** scans a chosen folder locally, groups byte-identical files by SHA-256, estimates reclaimable space, and lets you reveal files for manual review. It never deletes files.
 - **Image metadata inspector:** reports image dimensions, colour space, alpha, page count, and presence of EXIF, ICC, IPTC and XMP metadata.
 - **Metadata-free image export:** writes a separate copy without carrying embedded metadata. Animated and multi-page images are explicitly rejected by this tool to avoid accidental frame loss.
+- **Batch conversion queue:** processes files with a bounded worker pool, shows progress and per-file failures, and lets the user stop files that have not started. Active conversions finish safely.
+- **History controls:** export the local conversion history to CSV or clear the history without deleting converted output files.
 - **Smart format picks:** highlights a preferred output where Convee has a configured route; recommendations are heuristics, not guarantees of lossless conversion.
 
