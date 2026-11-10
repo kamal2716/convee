@@ -1,5 +1,5 @@
 const fs=require('node:fs/promises'),path=require('node:path'),{spawnSync,execFile}=require('node:child_process'),{promisify}=require('node:util');
-const run=promisify(execFile);const sharp=require('sharp');const {PDFDocument}=require('pdf-lib');
+const run=promisify(execFile);const sharp=require('sharp');const {PDFDocument,StandardFonts,rgb,degrees}=require('pdf-lib');
 const {detectEngines}=require('./engines/engine-manager');
 const {listFormats}=require('./engines/route-planner');
 const {convertWithEngine}=require('./engines/conversion-runner');
