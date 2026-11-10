@@ -50,6 +50,20 @@ async function runBatch(batch,format){
  toast(completed+' of '+batch.length+' files converted'+stopped);
 }
 
+function historyCsvCell(value){return '"'+String(value??'').replace(/"/g,'""')+'"'}
+$('#exportHistory').onclick=()=>{
+ if(!history.length){toast('There is no conversion history to export');return}
+ const rows=[['Original file','Output file','Format','Date'],...history.map(h=>[h.name,h.output,h.format,h.date])];
+ const csv='\\uFEFF'+rows.map(row=>row.map(historyCsvCell).join(',')).join('\\r\\n');
+ const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+ const link=document.createElement('a');link.href=url;link.download='convee-conversion-history.csv';document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);
+ toast('History CSV exported');
+};
+$('#clearHistory').onclick=async()=>{
+ if(!history.length){toast('History is already empty');return}
+ if(!confirm('Clear all saved conversion history? Your converted files will not be deleted.'))return;
+ history=[];await window.convee.saveHistory(history);renderHistory();toast('Conversion history cleared');
+};
 function renderHistory(){const el=$('#historyList');if(!history.length){el.innerHTML='<div class="empty"><div class="empty-icon">◷</div><b>Nothing converted yet</b><span>Your finished files will show up here.</span></div>';return}el.innerHTML=history.map(h=>'<div class="file-row"><div class="file-icon">'+h.format+'</div><div class="file-info"><b>'+esc(h.output.split(/[\\/]/).pop())+'</b><small>'+esc(h.date)+' · '+esc(h.name)+'</small></div><div class="file-actions"><button class="small-btn" data-open="'+esc(h.output)+'">Open</button><button class="small-btn" data-reveal="'+esc(h.output)+'">Show in folder</button></div></div>').join('');el.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>window.convee.open(b.dataset.open));el.querySelectorAll('[data-reveal]').forEach(b=>b.onclick=()=>window.convee.reveal(b.dataset.reveal))}
 $('#closeModal').onclick=()=>formatModal.classList.add('hidden');formatModal.querySelector('.modal-backdrop').onclick=()=>formatModal.classList.add('hidden');document.addEventListener('keydown',e=>{if(e.key==='Escape')formatModal.classList.add('hidden')});
 for(const ev of ['dragenter','dragover'])$('#dropzone').addEventListener(ev,e=>{e.preventDefault();$('#dropzone').classList.add('drag')});for(const ev of ['dragleave','drop'])$('#dropzone').addEventListener(ev,e=>{e.preventDefault();$('#dropzone').classList.remove('drag')});document.addEventListener('dragover',e=>e.preventDefault());document.addEventListener('drop',e=>{e.preventDefault();const paths=[...(e.dataTransfer?.files||[])].map(f=>f.path).filter(Boolean);if(paths.length)addPaths(paths)});
