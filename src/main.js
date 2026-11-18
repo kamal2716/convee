@@ -60,6 +60,16 @@ app.whenReady().then(async()=>{
  ipcMain.handle('formats:list',(_,ext)=>getFormats(ext));
  ipcMain.handle('engines:status',()=>engineStatus());
  ipcMain.handle('files:convert',async(_,payload)=>convertFile(payload));
+ ipcMain.handle('files:convert-from-overlay',async(_,payload)=>{
+  const result=await convertFile(payload);
+  const historyFile=path.join(app.getPath('userData'),'history.json');let items=[];
+  try{items=JSON.parse(await fs.readFile(historyFile,'utf8'))}catch{}
+  items.unshift({name:path.basename(payload.input),output:result.output,format:String(payload.format).toUpperCase(),date:new Date().toLocaleString()});
+  items=items.slice(0,100);await fs.mkdir(path.dirname(historyFile),{recursive:true});await fs.writeFile(historyFile,JSON.stringify(items,null,2));
+  if(win&&!win.isDestroyed())win.webContents.send('history:updated',items);
+  if(require('electron').Notification.isSupported())new (require('electron').Notification)({title:'Convee conversion complete',body:path.basename(result.output)+' is ready'}).show();
+  return result;
+ });
  ipcMain.handle('pdf:operate',async(_,payload)=>pdfOperation(payload));
  ipcMain.handle('watch:list',async()=>readWatchConfigs());
  ipcMain.handle('watch:add',async(_,cfg)=>{const id=cfg.id||cfg.folder;const items=(await readWatchConfigs()).filter(x=>x.id!==id);const saved={...cfg,id};items.push(saved);await writeWatchConfigs(items);startFolderWatcher(saved);return id});
