@@ -82,7 +82,6 @@ The Windows package workflow unpacks these runtime binaries from Electron ASAR. 
 - The main window is a secondary control centre for preferences, history and advanced tools; closing it minimizes Convee so the global gesture can remain available.
 - Optional launch-at-sign-in and explicit enable/disable control for the global gesture.
 - Batch conversion and recent conversion history.
-- Global modifier + drag floating format donut (native input hook; operating-system testing is still required).
 - Visual drag-to-select image crop and export.
 - PDF merge, split, page extraction, clockwise page rotation and page numbering.
 - Persistent watch-folder rules, restored when Convee starts.
