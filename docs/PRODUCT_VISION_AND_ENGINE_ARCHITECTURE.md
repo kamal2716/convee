@@ -2,11 +2,11 @@
 
 ## Product goal
 
-Convee is an offline-first, local-first desktop conversion workspace. It aims to provide the breadth of Filee while making conversion setup, batch workflows, reliability, privacy, accessibility, and advanced file operations substantially better.
+Convee is an offline-first, local-first desktop-wide conversion assistant. Its primary interaction is launched from Windows File Explorer: the user selects a file, holds Ctrl and drags it, and Convee reveals a floating format donut with only the conversions currently available for that file. The user releases on a format or selects one from the donut; conversion happens locally and the result is saved without importing files into a conventional app queue. The main window is a secondary control centre for preferences, history, engine management and advanced tools. Convee aims to exceed Filee in conversion breadth, reliability, privacy, accessibility and workflow intelligence.
 
 Convee must never advertise a conversion merely because an extension appears in a list. A route is available only when the installed engine reports that it can decode the input, encode the output, and the route has an execution adapter and passing fixture coverage.
 
-## Product principles
+## Primary interaction contract\n\n- The user initiates conversion from the file's existing location in File Explorer. Convee must not require a preliminary import into its main window.\n- The global gesture is opt-in and visibly controllable. Convee monitors only the modifier/mouse gesture needed to summon the donut; it does not crawl folders or enumerate the user's drives.\n- The selected file is made available to Convee only when the user deliberately drags it onto the donut. Do not request broad filesystem access when a per-file drag handoff is sufficient.\n- The donut shows only routes that are actually executable on the current machine. If an engine is missing, offer an approved managed engine pack rather than presenting a fake-ready option.\n- The main window can be minimized while the background gesture remains active; the user retains a clear quit and disable control.\n\n## Product principles
 
 1. **No manual dependency hunting.** Users should not need to find, install, configure, or update ImageMagick, FFmpeg, LibreOffice, Calibre, Pandoc, GDAL, Blender, 7-Zip, Ghostscript, or specialist tools themselves.
 2. **Local by default.** File bytes remain on the user's machine. No account or cloud upload is required for conversion.
@@ -20,14 +20,14 @@ Convee must never advertise a conversion merely because an extension appears in 
 
 Build and verify parity for the documented Filee workflows and categories:
 
-- Cursor/drop-zone conversion workflow and relevant-format filtering
+- Global Ctrl + drag from File Explorer, floating format donut, live relevant-format filtering, and direct drop-on-format conversion
 - Per-file-type toolbars/profiles and presets
 - Crop workflow
 - Multi-file batch conversion and multi-step route planning
 - Watch folders
 - Recent conversion history with open/reveal actions
-- Home drop zone and queued file list
-- Context menu, keyboard shortcut, drag/drop, and CLI entry points
+- Main control centre for settings, history, engine packs and advanced tools (not a required file-import step)
+- Windows Explorer context-menu integration, global gesture, keyboard shortcuts, and optional CLI entry points
 - Light/dark themes, accent and opacity customization, localization
 - Images, vector formats, PDF, office documents, spreadsheets, presentations, HWP/HWPX, text/markup, e-books, video, audio, subtitles, archives, CAD, fonts, structured data, 3D, and geospatial data
 - Engine management, update notifications, settings, privacy controls, and offline behavior
