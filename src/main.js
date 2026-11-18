@@ -13,7 +13,7 @@ async function readWatchConfigs(){try{return JSON.parse(await fs.readFile(watchC
 async function writeWatchConfigs(items){await fs.mkdir(path.dirname(watchConfigPath()),{recursive:true});await fs.writeFile(watchConfigPath(),JSON.stringify(items,null,2))}
 function startFolderWatcher(cfg){const id=cfg.id||cfg.folder;if(watchers.has(id))watchers.get(id).close();const watcher=chokidar.watch(cfg.folder,{ignoreInitial:true,awaitWriteFinish:{stabilityThreshold:1200,pollInterval:150},ignored:p=>p.includes('.convee-')||p.includes('-converted.')});watcher.on('add',async file=>{if(!cfg.format||path.extname(file).slice(1).toLowerCase()===cfg.format)return;try{await convertFile({input:file,format:cfg.format,outputDir:cfg.outputDir||cfg.folder})}catch(err){console.warn('Watch conversion:',err.message)}});watchers.set(id,watcher);return id}
 
-let win, overlay, hook, modifierDown=false, mouseDown=false;
+let win, overlay, hook, modifierDown=false, mouseDown=false, isQuitting=false;
 const modifierCodes=process.platform==='darwin'?[56,3640]:[29,3613];
 const isModifier=code=>modifierCodes.includes(code);
 const isWin=process.platform==='win32';
@@ -21,7 +21,8 @@ function hasTool(name){const cmd=isWin?'where':process.platform==='darwin'?'whic
 function createWindow(){
  win=new BrowserWindow({width:1180,height:820,minWidth:850,minHeight:620,backgroundColor:'#080a0f',title:'convee',titleBarStyle:process.platform==='darwin'?'hiddenInset':'default',webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true,nodeIntegration:false,sandbox:true}});
  win.loadFile(path.join(__dirname,'index.html'));
- Menu.setApplicationMenu(Menu.buildFromTemplate([{label:'File',submenu:[{label:'Add files…',accelerator:'CmdOrCtrl+O',click:chooseFiles},{label:'Open Downloads',click:()=>shell.openPath(app.getPath('downloads'))},{type:'separator'},{role:'quit'}]},{label:'Edit',submenu:[{role:'copy'},{role:'paste'},{role:'selectAll'}]},{label:'View',submenu:[{role:'reload'},{role:'toggleDevTools'},{type:'separator'},{role:'resetZoom'},{role:'zoomIn'},{role:'zoomOut'}]}]));
+ win.on('close',event=>{if(!isQuitting){event.preventDefault();win.minimize()}});
+ Menu.setApplicationMenu(Menu.buildFromTemplate([{label:'File',submenu:[{label:'Open Downloads',click:()=>shell.openPath(app.getPath('downloads'))},{type:'separator'},{label:'Quit Convee',click:()=>app.quit()}]},{label:'Edit',submenu:[{role:'copy'},{role:'paste'},{role:'selectAll'}]},{label:'View',submenu:[{role:'reload'},{role:'toggleDevTools'},{type:'separator'},{role:'resetZoom'},{role:'zoomIn'},{role:'zoomOut'}]}]));
 }
 async function chooseFiles(){const r=await dialog.showOpenDialog(win,{properties:['openFile','multiSelections']});if(!r.canceled&&win)win.webContents.send('files:chosen',r.filePaths)}
 function createOverlay(){
@@ -90,5 +91,6 @@ app.whenReady().then(async()=>{
  createWindow();createOverlay();if((await readPreferences()).gestureEnabled)startGlobalHook();
  app.on('activate',()=>{if(BrowserWindow.getAllWindows().length===0)createWindow()});
 });
+app.on('before-quit',()=>{isQuitting=true});
 app.on('will-quit',()=>{try{hook?.stop()}catch{}for(const w of watchers.values())w.close();watchers.clear()});
 app.on('window-all-closed',()=>{if(process.platform!=='darwin')app.quit()});
