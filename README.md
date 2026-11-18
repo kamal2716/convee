@@ -112,7 +112,7 @@ The test suite uses real temporary fixtures for:
 - Markdown-to-HTML output.
 - Route availability and unsupported-pair rejection.
 
-GitHub Actions runs the Node test suite and a Windows packaging workflow. A successful CI package confirms the build can be produced on a Windows runner; it is not a substitute for manual testing on a physical Windows PC, especially for the global mouse hook, overlay placement, file dialogs and installer behavior.
+GitHub Actions can package Windows NSIS and portable builds automatically. The verification workflow is manually triggered after the feature-build phase so implementation can proceed before the planned full test pass. A successful CI package confirms the build can be produced on a Windows runner; it is not a substitute for manual testing on a physical Windows PC, especially for the global mouse hook, overlay placement, file dialogs and installer behavior.
 
 ## Security
 
