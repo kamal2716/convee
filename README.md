@@ -1,6 +1,6 @@
 # Convee Desktop
 
-A native, local-first desktop file converter built with Electron. Convee is a desktop application, not a hosted website. Files are processed on the user's computer; the app does not upload source files.
+A native, local-first desktop conversion assistant built around a global Ctrl + drag gesture. Select a file in Windows File Explorer, hold Ctrl and drag it to summon Convee's floating format donut, then choose an available output format. Convee is a desktop application, not a hosted website. It processes only files the user deliberately hands to it; it does not scan drives or upload source files.
 
 ## Run locally
 
@@ -75,9 +75,12 @@ The Windows package workflow unpacks these runtime binaries from Electron ASAR. 
 | Assimp / Blender | 3D models |
 | FontForge | Font conversion |
 
-## Desktop features
+## Primary interaction and file access\n\nConvee does not require users to import files into its main window. The global gesture is opt-in from Settings. When enabled, Convee observes the Ctrl + mouse gesture so it can reveal the donut; the file itself is only received when the user drags it over the donut. This is not blanket access to the user's disk. On Windows, the user grants access to the particular file by selecting and dragging it; platform security prompts may apply to global input monitoring on other operating systems.\n\n## Desktop features
 
-- Native file picker and drag/drop queue.
+- Global Ctrl + left-drag gesture from File Explorer to summon a floating conversion donut; available formats appear as the selected file is dragged over the wheel.
+- The donut can convert directly when a file is released on a format, or after release when the user selects a format.
+- The main window is a secondary control centre for preferences, history and advanced tools; closing it minimizes Convee so the global gesture can remain available.
+- Optional launch-at-sign-in and explicit enable/disable control for the global gesture.
 - Batch conversion and recent conversion history.
 - Global modifier + drag floating format donut (native input hook; operating-system testing is still required).
 - Visual drag-to-select image crop and export.
