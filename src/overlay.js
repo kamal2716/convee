@@ -47,7 +47,7 @@ document.addEventListener('drop',async e=>{
 async function convert(ext){
  if(!dropped.length)return;
  const chosen=dropped.slice();$('#hint').textContent='Converting '+chosen.length+' file(s) locally…';$('#shell').classList.add('busy');
- const results=await Promise.allSettled(chosen.map(input=>window.convee.convert({input,format:ext})));
+ const results=await Promise.allSettled(chosen.map(input=>window.convee.convertFromOverlay({input,format:ext})));
  const ok=results.filter(x=>x.status==='fulfilled').length;
  const failed=results.length-ok;
  $('#hint').textContent=ok+' converted'+(failed?' · '+failed+' failed':'')+' · saved beside originals';
