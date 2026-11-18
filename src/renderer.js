@@ -89,6 +89,10 @@ document.querySelectorAll('.theme-chip').forEach(b=>b.addEventListener('click',(
 $('#presetDefault').addEventListener('click',()=>{prefs={...defaultPrefs};loadColorFields();persistPreferences();toast('Signature palette restored')});
 async function initializeAppearance(){try{prefs={...defaultPrefs,...await window.convee.loadPreferences()}}catch{}loadColorFields();bindColorStudio();applyPreferences()}
 initializeAppearance();
+async function syncRuntimeSettings(){const gesture=$('#toggleGesture'),startup=$('#toggleStartup');try{const enabled=await window.convee.gestureEnabled();gesture.textContent=enabled?'Disable Ctrl + drag':'Enable Ctrl + drag';gesture.dataset.enabled=String(enabled);const auto=await window.convee.startupEnabled();startup.textContent=auto?'Disable startup':'Enable startup';startup.dataset.enabled=String(auto)}catch{gesture.textContent='Unavailable';startup.textContent='Unavailable'}}
+$('#toggleGesture').addEventListener('click',async()=>{const next=$('#toggleGesture').dataset.enabled!=='true';try{await window.convee.setGestureEnabled(next);await syncRuntimeSettings();toast(next?'Ctrl + drag is enabled':'Ctrl + drag is disabled')}catch(error){toast('Could not change gesture setting: '+error.message)}});
+$('#toggleStartup').addEventListener('click',async()=>{const next=$('#toggleStartup').dataset.enabled!=='true';try{await window.convee.setStartupEnabled(next);await syncRuntimeSettings();toast(next?'Convee will start when you sign in':'Startup launch disabled')}catch(error){toast('Could not change startup setting: '+error.message)}});
+syncRuntimeSettings();
 
 let watchedFolders=[];
 function renderWatchFolders(){
