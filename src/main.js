@@ -7,7 +7,7 @@ const sharp=require('sharp');
 const { convertFile, getFormats, engineStatus, pdfOperation } = require('./converter');
 const { findDuplicates } = require('./features/duplicate-finder');
 const { inspectImage, exportWithoutMetadata } = require('./features/image-privacy');
-const watchers=new Map();
+const watchers=new Map();let overlayHistoryQueue=Promise.resolve();
 const watchConfigPath=()=>path.join(app.getPath('userData'),'watch-folders.json');
 async function readWatchConfigs(){try{return JSON.parse(await fs.readFile(watchConfigPath(),'utf8'))}catch{return []}}
 async function writeWatchConfigs(items){await fs.mkdir(path.dirname(watchConfigPath()),{recursive:true});await fs.writeFile(watchConfigPath(),JSON.stringify(items,null,2))}
@@ -70,14 +70,16 @@ app.whenReady().then(async()=>{
  ipcMain.handle('files:convert',async(_,payload)=>convertFile(payload));
  ipcMain.handle('files:convert-from-overlay',async(_,payload)=>{
   const result=await convertFile(payload);
-  const historyFile=path.join(app.getPath('userData'),'history.json');let items=[];
-  try{items=JSON.parse(await fs.readFile(historyFile,'utf8'))}catch{}
-  items.unshift({name:path.basename(payload.input),output:result.output,format:String(payload.format).toUpperCase(),date:new Date().toLocaleString()});
-  items=items.slice(0,100);await fs.mkdir(path.dirname(historyFile),{recursive:true});await fs.writeFile(historyFile,JSON.stringify(items,null,2));
-  if(win&&!win.isDestroyed())win.webContents.send('history:updated',items);
-  if(require('electron').Notification.isSupported())new (require('electron').Notification)({title:'Convee conversion complete',body:path.basename(result.output)+' is ready'}).show();
-  return result;
+  overlayHistoryQueue=overlayHistoryQueue.then(async()=>{
+   const historyFile=path.join(app.getPath('userData'),'history.json');let items=[];
+   try{items=JSON.parse(await fs.readFile(historyFile,'utf8'))}catch{}
+   items.unshift({name:path.basename(payload.input),output:result.output,format:String(payload.format).toUpperCase(),date:new Date().toLocaleString()});
+   items=items.slice(0,100);await fs.mkdir(path.dirname(historyFile),{recursive:true});await fs.writeFile(historyFile,JSON.stringify(items,null,2));
+   if(win&&!win.isDestroyed())win.webContents.send('history:updated',items);
+  });
+  await overlayHistoryQueue;return result;
  });
+ ipcMain.handle('app:notify',(_,message)=>{const {Notification}=require('electron');if(Notification.isSupported())new Notification({title:String(message?.title||'Convee'),body:String(message?.body||'Your file is ready')}).show();return true});
  ipcMain.handle('pdf:operate',async(_,payload)=>pdfOperation(payload));
  ipcMain.handle('watch:list',async()=>readWatchConfigs());
  ipcMain.handle('watch:add',async(_,cfg)=>{const id=cfg.id||cfg.folder;const items=(await readWatchConfigs()).filter(x=>x.id!==id);const saved={...cfg,id};items.push(saved);await writeWatchConfigs(items);startFolderWatcher(saved);return id});
