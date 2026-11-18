@@ -101,3 +101,5 @@ body.navy-theme .metadata-row{background:#101c2b}
 .gesture-status b{font-size:12px;margin-bottom:4px}
 .gesture-dot{width:9px;height:9px;flex:none;border-radius:50%;background:var(--mint);box-shadow:0 0 12px var(--mint)}
 @media(max-width:760px){.workflow-guide{grid-template-columns:1fr}.workflow-step{min-height:85px}}
+
+.gesture-dot.off{background:#9aa5b5;box-shadow:none}
