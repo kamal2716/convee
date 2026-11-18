@@ -34,7 +34,7 @@ function showOverlay(){if(!overlay||overlay.isDestroyed())createOverlay();const 
 function hideOverlay(){if(overlay&&!overlay.isDestroyed()){overlay.webContents.send('overlay:state',{active:false});overlay.hide()}}
 function startGlobalHook(){
  try{
-  if(hook){hook.start();return}
+  if(hook){hook.start();return true}
   const {uIOhook}=require('uiohook-napi');
   hook=uIOhook;
   hook.on('keydown',e=>{if(isModifier(e.keycode))modifierDown=true;});
@@ -42,8 +42,8 @@ function startGlobalHook(){
   hook.on('mousedown',e=>{if(e.button===1){mouseDown=true;if(modifierDown)showOverlay()}});
   hook.on('mouseup',e=>{if(e.button===1){mouseDown=false;if(!modifierDown)hideOverlay()}});
   hook.on('mousemove',e=>{if(modifierDown&&mouseDown&&overlay&&!overlay.isDestroyed()&&overlay.isVisible())overlay.setPosition(Math.max(0,e.x-180),Math.max(0,e.y-180),false)});
-  hook.start();
- }catch(err){console.warn('Global drag hook unavailable:',err.message)}
+  hook.start();return true;
+ }catch(err){console.warn('Global drag hook unavailable:',err.message);return false}
 }
 function stopGlobalHook(){try{hook?.stop()}catch{}hideOverlay()}
 async function readPreferences(){try{return JSON.parse(await fs.readFile(path.join(app.getPath('userData'),'preferences.json'),'utf8'))}catch{return {}}}
