@@ -32,7 +32,8 @@ function createOverlay(){
  overlay.setAlwaysOnTop(true,'screen-saver');overlay.setVisibleOnAllWorkspaces(true,{visibleOnFullScreen:true});overlay.loadFile(path.join(__dirname,'overlay.html'));
  overlay.on('closed',()=>overlay=null);
 }
-function showOverlay(){if(!overlay||overlay.isDestroyed())createOverlay();const p=screen.getCursorScreenPoint();overlay.setPosition(Math.max(0,p.x-180),Math.max(0,p.y-180),false);overlay.showInactive();overlay.webContents.send('overlay:state',{active:true});}
+function overlayPositionAt(point){const area=screen.getDisplayNearestPoint(point).workArea;const width=360,height=360;const x=Math.max(area.x,Math.min(point.x-width/2,area.x+area.width-width));const y=Math.max(area.y,Math.min(point.y-height/2,area.y+area.height-height));return{x:Math.round(x),y:Math.round(y)}}
+function showOverlay(){if(!overlay||overlay.isDestroyed())createOverlay();const p=screen.getCursorScreenPoint();const pos=overlayPositionAt(p);overlay.setPosition(pos.x,pos.y,false);overlay.showInactive();overlay.webContents.send('overlay:state',{active:true});}
 function hideOverlay(){if(overlay&&!overlay.isDestroyed()){overlay.webContents.send('overlay:state',{active:false});overlay.hide()}}
 function startGlobalHook(){
  try{
@@ -43,7 +44,7 @@ function startGlobalHook(){
   hook.on('keyup',e=>{if(isModifier(e.keycode)){modifierDown=false;if(!mouseDown)hideOverlay()}});
   hook.on('mousedown',e=>{if(e.button===1){mouseDown=true;if(modifierDown)showOverlay()}});
   hook.on('mouseup',e=>{if(e.button===1){mouseDown=false;if(!modifierDown)hideOverlay()}});
-  hook.on('mousemove',e=>{if(modifierDown&&mouseDown&&overlay&&!overlay.isDestroyed()&&overlay.isVisible())overlay.setPosition(Math.max(0,e.x-180),Math.max(0,e.y-180),false)});
+  hook.on('mousemove',e=>{if(modifierDown&&mouseDown&&overlay&&!overlay.isDestroyed()&&overlay.isVisible())(()=>{const p=overlayPositionAt({x:e.x,y:e.y});overlay.setPosition(p.x,p.y,false)})()});
   hook.start();return true;
  }catch(err){console.warn('Global drag hook unavailable:',err.message);return false}
 }
