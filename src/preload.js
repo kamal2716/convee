@@ -22,6 +22,7 @@ contextBridge.exposeInMainWorld('convee',{
  saveHistory:items=>ipcRenderer.invoke('history:save',items),
  convert:payload=>ipcRenderer.invoke('files:convert',payload),
  convertFromOverlay:payload=>ipcRenderer.invoke('files:convert-from-overlay',payload),
+ notify:message=>ipcRenderer.invoke('app:notify',message),
  onHistoryUpdated:cb=>ipcRenderer.on('history:updated',(_,items)=>cb(items)),
  pdfOperation:payload=>ipcRenderer.invoke('pdf:operate',payload),
  watchFolders:()=>ipcRenderer.invoke('watch:list'),
