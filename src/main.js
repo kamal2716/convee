@@ -24,7 +24,6 @@ function createWindow(){
  win.on('close',event=>{if(!isQuitting){event.preventDefault();win.minimize()}});
  Menu.setApplicationMenu(Menu.buildFromTemplate([{label:'File',submenu:[{label:'Open Downloads',click:()=>shell.openPath(app.getPath('downloads'))},{type:'separator'},{label:'Quit Convee',click:()=>app.quit()}]},{label:'Edit',submenu:[{role:'copy'},{role:'paste'},{role:'selectAll'}]},{label:'View',submenu:[{role:'reload'},{role:'toggleDevTools'},{type:'separator'},{role:'resetZoom'},{role:'zoomIn'},{role:'zoomOut'}]}]));
 }
-async function chooseFiles(){const r=await dialog.showOpenDialog(win,{properties:['openFile','multiSelections']});if(!r.canceled&&win)win.webContents.send('files:chosen',r.filePaths)}
 function createOverlay(){
  overlay=new BrowserWindow({width:360,height:360,x:Math.round(screen.getCursorScreenPoint().x-180),y:Math.round(screen.getCursorScreenPoint().y-180),show:false,frame:false,transparent:true,hasShadow:false,resizable:false,skipTaskbar:true,alwaysOnTop:true,focusable:false,backgroundColor:'#00000000',webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true,nodeIntegration:false,sandbox:true}});
  overlay.setAlwaysOnTop(true,'screen-saver');overlay.setVisibleOnAllWorkspaces(true,{visibleOnFullScreen:true});overlay.loadFile(path.join(__dirname,'overlay.html'));
@@ -48,7 +47,6 @@ function startGlobalHook(){
 function stopGlobalHook(){try{hook?.stop()}catch{}hideOverlay()}
 async function readPreferences(){try{return JSON.parse(await fs.readFile(path.join(app.getPath('userData'),'preferences.json'),'utf8'))}catch{return {}}}
 app.whenReady().then(async()=>{
- ipcMain.handle('files:choose',chooseFiles);
  ipcMain.handle('image:choose',async()=>{const r=await dialog.showOpenDialog(win,{filters:[{name:'Images',extensions:['png','jpg','jpeg','webp','avif','tiff','bmp','gif']}],properties:['openFile']});return r.canceled?null:r.filePaths[0]});
  ipcMain.handle('image:preview',async(_,file)=>{const data=await sharp(file).rotate().resize({width:1400,height:1000,fit:'inside',withoutEnlargement:true}).jpeg({quality:86}).toBuffer();return 'data:image/jpeg;base64,'+data.toString('base64')});
  ipcMain.handle('pdf:choose',async()=>{const r=await dialog.showOpenDialog(win,{filters:[{name:'PDF files',extensions:['pdf']}],properties:['openFile','multiSelections']});return r.canceled?[]:r.filePaths});
@@ -86,7 +84,6 @@ app.whenReady().then(async()=>{
  ipcMain.handle('watch:remove',async(_,id)=>{await watchers.get(id)?.close();watchers.delete(id);await writeWatchConfigs((await readWatchConfigs()).filter(x=>x.id!==id));return true});
  ipcMain.handle('files:reveal',(_,p)=>shell.showItemInFolder(p));
  ipcMain.handle('files:open',(_,p)=>shell.openPath(p));
- ipcMain.on('overlay:dropped',(_,paths)=>{hideOverlay();if(win){win.show();win.focus();win.webContents.send('files:chosen',paths)}});
  ipcMain.on('overlay:convert',async(_,payload)=>{try{const result=await convertFile(payload);if(win)win.webContents.send('overlay:result',{ok:true,...result});hideOverlay()}catch(e){if(win)win.webContents.send('overlay:result',{ok:false,error:e.message});}});
  ipcMain.on('overlay:close',hideOverlay);
  for(const cfg of await readWatchConfigs()){try{startFolderWatcher(cfg)}catch(err){console.warn('Could not restore watch folder:',err.message)}}
