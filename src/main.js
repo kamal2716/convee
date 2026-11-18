@@ -14,6 +14,9 @@ async function writeWatchConfigs(items){await fs.mkdir(path.dirname(watchConfigP
 function startFolderWatcher(cfg){const id=cfg.id||cfg.folder;if(watchers.has(id))watchers.get(id).close();const watcher=chokidar.watch(cfg.folder,{ignoreInitial:true,awaitWriteFinish:{stabilityThreshold:1200,pollInterval:150},ignored:p=>p.includes('.convee-')||p.includes('-converted.')});watcher.on('add',async file=>{if(!cfg.format||path.extname(file).slice(1).toLowerCase()===cfg.format)return;try{await convertFile({input:file,format:cfg.format,outputDir:cfg.outputDir||cfg.folder})}catch(err){console.warn('Watch conversion:',err.message)}});watchers.set(id,watcher);return id}
 
 let win, overlay, hook, modifierDown=false, mouseDown=false, isQuitting=false;
+const singleInstanceLock=app.requestSingleInstanceLock();
+function contextFilesFromArgs(args){const i=args.indexOf('--convee-context');return i<0?[]:args.slice(i+1).filter(x=>x&&!x.startsWith('--')).map(x=>path.resolve(x)).slice(0,20)}
+function openContextFiles(files){if(!files.length)return;if(!overlay||overlay.isDestroyed())createOverlay();showOverlay();const send=()=>{if(overlay&&!overlay.isDestroyed())overlay.webContents.send('overlay:files',files)};if(overlay.webContents.isLoading())overlay.webContents.once('did-finish-load',send);else send();if(win&&!win.isDestroyed())win.show();}
 const modifierCodes=process.platform==='darwin'?[56,3640]:[29,3613];
 const isModifier=code=>modifierCodes.includes(code);
 const isWin=process.platform==='win32';
@@ -46,6 +49,7 @@ function startGlobalHook(){
 }
 function stopGlobalHook(){try{hook?.stop()}catch{}hideOverlay()}
 async function readPreferences(){try{return JSON.parse(await fs.readFile(path.join(app.getPath('userData'),'preferences.json'),'utf8'))}catch{return {}}}
+if(!singleInstanceLock){app.quit()}else{app.on('second-instance',(_event,argv)=>openContextFiles(contextFilesFromArgs(argv)));}
 app.whenReady().then(async()=>{
  ipcMain.handle('image:choose',async()=>{const r=await dialog.showOpenDialog(win,{filters:[{name:'Images',extensions:['png','jpg','jpeg','webp','avif','tiff','bmp','gif']}],properties:['openFile']});return r.canceled?null:r.filePaths[0]});
  ipcMain.handle('image:preview',async(_,file)=>{const data=await sharp(file).rotate().resize({width:1400,height:1000,fit:'inside',withoutEnlargement:true}).jpeg({quality:86}).toBuffer();return 'data:image/jpeg;base64,'+data.toString('base64')});
@@ -53,6 +57,21 @@ app.whenReady().then(async()=>{
  ipcMain.handle('folder:choose',async()=>{const r=await dialog.showOpenDialog(win,{properties:['openDirectory','createDirectory']});return r.canceled?null:r.filePaths[0]});
  ipcMain.handle('preferences:load',async()=>{try{return JSON.parse(await fs.readFile(path.join(app.getPath('userData'),'preferences.json'),'utf8'))}catch{return {}}});
  ipcMain.handle('gesture:get',async()=>Boolean((await readPreferences()).gestureEnabled));
+ ipcMain.handle('context-menu:get',async()=>Boolean((await readPreferences()).contextMenuEnabled));
+ ipcMain.handle('context-menu:set',async(_,enabled)=>{
+  if(process.platform!=='win32')throw new Error('Explorer context menu is currently supported on Windows only');
+  const key='HKCU\\Software\\Classes\\*\\shell\\ConveeConvert';
+  const commandKey=key+'\\command';
+  const exe=process.execPath;
+  if(enabled){
+   const add=(target,args)=>{const r=spawnSync('reg.exe',['add',target,...args],{encoding:'utf8',windowsHide:true});if(r.status!==0)throw new Error((r.stderr||r.stdout||'Registry update failed').trim())};
+   add(key,['/v','MUIVerb','/d','Convert with Convee','/f']);
+   add(key,['/v','Icon','/d',exe+',0','/f']);
+   add(key,['/v','MultiSelectModel','/d','Player','/f']);
+   add(commandKey,['/ve','/d','"'+exe+'" --convee-context "%*"','/f']);
+  }else{const r=spawnSync('reg.exe',['delete',key,'/f'],{encoding:'utf8',windowsHide:true});if(r.status!==0&& !/unable to find/i.test(r.stderr||''))throw new Error((r.stderr||r.stdout||'Could not remove context menu').trim())}
+  const p=await readPreferences();p.contextMenuEnabled=Boolean(enabled);const file=path.join(app.getPath('userData'),'preferences.json');await fs.mkdir(path.dirname(file),{recursive:true});await fs.writeFile(file,JSON.stringify(p,null,2));return Boolean(enabled)
+ });
  ipcMain.handle('gesture:set',async(_,enabled)=>{const p=await readPreferences();p.gestureEnabled=Boolean(enabled);const file=path.join(app.getPath('userData'),'preferences.json');await fs.mkdir(path.dirname(file),{recursive:true});await fs.writeFile(file,JSON.stringify(p,null,2));if(p.gestureEnabled){if(!overlay||overlay.isDestroyed())createOverlay();startGlobalHook()}else stopGlobalHook();return p.gestureEnabled});
  ipcMain.handle('startup:get',()=>Boolean(app.getLoginItemSettings().openAtLogin));
  ipcMain.handle('startup:set',(_,enabled)=>{app.setLoginItemSettings({openAtLogin:Boolean(enabled),path:process.execPath});return Boolean(enabled)});
@@ -87,7 +106,7 @@ app.whenReady().then(async()=>{
  ipcMain.on('overlay:convert',async(_,payload)=>{try{const result=await convertFile(payload);if(win)win.webContents.send('overlay:result',{ok:true,...result});hideOverlay()}catch(e){if(win)win.webContents.send('overlay:result',{ok:false,error:e.message});}});
  ipcMain.on('overlay:close',hideOverlay);
  for(const cfg of await readWatchConfigs()){try{startFolderWatcher(cfg)}catch(err){console.warn('Could not restore watch folder:',err.message)}}
- createWindow();createOverlay();if((await readPreferences()).gestureEnabled)startGlobalHook();
+ createWindow();createOverlay();if((await readPreferences()).gestureEnabled)startGlobalHook();const initialContextFiles=contextFilesFromArgs(process.argv);if(initialContextFiles.length)openContextFiles(initialContextFiles);
  app.on('activate',()=>{if(BrowserWindow.getAllWindows().length===0)createWindow()});
 });
 app.on('before-quit',()=>{isQuitting=true});
