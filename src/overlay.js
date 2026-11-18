@@ -53,7 +53,7 @@ async function convert(ext){
  dropped=chosen.filter((_,index)=>results[index].status==='rejected');
  $('#hint').textContent=ok+' converted'+(failed?' · '+failed+' failed · retry available':' · saved beside originals');
  if(ok)window.convee.notify({title:'Convee conversion complete',body:ok+' file(s) converted to .'+ext.toUpperCase()});
- if(failed){inspectedKey='';formats=[];$('#shell').classList.remove('busy');return}
+ if(failed){inspectedKey=dropped.join('|');render();$('#shell').classList.remove('busy');return}
  setTimeout(close,1300);
 }
 
