@@ -13,6 +13,8 @@ contextBridge.exposeInMainWorld('convee',{
  loadHistory:()=>ipcRenderer.invoke('history:load'),
  loadPreferences:()=>ipcRenderer.invoke('preferences:load'),
  gestureEnabled:()=>ipcRenderer.invoke('gesture:get'),
+ contextMenuEnabled:()=>ipcRenderer.invoke('context-menu:get'),
+ setContextMenuEnabled:value=>ipcRenderer.invoke('context-menu:set',value),
  setGestureEnabled:value=>ipcRenderer.invoke('gesture:set',value),
  startupEnabled:()=>ipcRenderer.invoke('startup:get'),
  setStartupEnabled:value=>ipcRenderer.invoke('startup:set',value),
@@ -32,5 +34,6 @@ contextBridge.exposeInMainWorld('convee',{
  onOverlayResult:cb=>ipcRenderer.on('overlay:result',(_,r)=>cb(r)),
  overlayConvert:payload=>ipcRenderer.send('overlay:convert',payload),
  overlayClose:()=>ipcRenderer.send('overlay:close'),
- onOverlayState:cb=>ipcRenderer.on('overlay:state',(_,s)=>cb(s))
+ onOverlayState:cb=>ipcRenderer.on('overlay:state',(_,s)=>cb(s)),
+ onContextFiles:cb=>ipcRenderer.on('overlay:files',(_,files)=>cb(files))
 });
