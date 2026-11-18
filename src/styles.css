@@ -89,3 +89,15 @@ body.navy-theme .metadata-row{background:#101c2b}
 .queue-tools{display:flex;align-items:center;gap:10px}.queue-tools button[hidden]{display:none}
 #queueHint{font-size:10px;color:var(--muted);text-align:right}
 #cancelBatch{border-color:#bd665755;color:#bd6657}
+
+/* Explorer-first workflow */
+.workflow-guide{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:28px 0 18px}
+.workflow-step{min-height:112px;padding:18px;border:1px solid var(--line);border-radius:16px;background:var(--panel);display:flex;flex-direction:column;gap:7px}
+.workflow-step span{font:10px 'DM Mono';color:var(--accent);letter-spacing:1px}
+.workflow-step b{font:700 15px Manrope}
+.workflow-step small,.gesture-status small{font-size:11px;line-height:1.55;color:var(--muted)}
+.gesture-status{display:flex;align-items:center;gap:13px;padding:17px 20px;border:1px solid var(--line);border-radius:15px;background:var(--panel)}
+.gesture-status b,.gesture-status small{display:block}
+.gesture-status b{font-size:12px;margin-bottom:4px}
+.gesture-dot{width:9px;height:9px;flex:none;border-radius:50%;background:var(--mint);box-shadow:0 0 12px var(--mint)}
+@media(max-width:760px){.workflow-guide{grid-template-columns:1fr}.workflow-step{min-height:85px}}
