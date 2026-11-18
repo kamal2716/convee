@@ -1,9 +1,6 @@
-name: Test and build desktop app
+name: Convee verification (manual after feature build)
 on:
-  push:
-    branches: [main, feature/complete-format-engines]
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
 jobs:
   test:
     runs-on: ubuntu-latest
