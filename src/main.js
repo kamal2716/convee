@@ -33,6 +33,7 @@ function showOverlay(){if(!overlay||overlay.isDestroyed())createOverlay();const 
 function hideOverlay(){if(overlay&&!overlay.isDestroyed()){overlay.webContents.send('overlay:state',{active:false});overlay.hide()}}
 function startGlobalHook(){
  try{
+  if(hook){hook.start();return}
   const {uIOhook}=require('uiohook-napi');
   hook=uIOhook;
   hook.on('keydown',e=>{if(isModifier(e.keycode))modifierDown=true;});
@@ -43,6 +44,8 @@ function startGlobalHook(){
   hook.start();
  }catch(err){console.warn('Global drag hook unavailable:',err.message)}
 }
+function stopGlobalHook(){try{hook?.stop()}catch{}hideOverlay()}
+async function readPreferences(){try{return JSON.parse(await fs.readFile(path.join(app.getPath('userData'),'preferences.json'),'utf8'))}catch{return {}}}
 app.whenReady().then(async()=>{
  ipcMain.handle('files:choose',chooseFiles);
  ipcMain.handle('image:choose',async()=>{const r=await dialog.showOpenDialog(win,{filters:[{name:'Images',extensions:['png','jpg','jpeg','webp','avif','tiff','bmp','gif']}],properties:['openFile']});return r.canceled?null:r.filePaths[0]});
@@ -50,6 +53,10 @@ app.whenReady().then(async()=>{
  ipcMain.handle('pdf:choose',async()=>{const r=await dialog.showOpenDialog(win,{filters:[{name:'PDF files',extensions:['pdf']}],properties:['openFile','multiSelections']});return r.canceled?[]:r.filePaths});
  ipcMain.handle('folder:choose',async()=>{const r=await dialog.showOpenDialog(win,{properties:['openDirectory','createDirectory']});return r.canceled?null:r.filePaths[0]});
  ipcMain.handle('preferences:load',async()=>{try{return JSON.parse(await fs.readFile(path.join(app.getPath('userData'),'preferences.json'),'utf8'))}catch{return {}}});
+ ipcMain.handle('gesture:get',async()=>Boolean((await readPreferences()).gestureEnabled));
+ ipcMain.handle('gesture:set',async(_,enabled)=>{const p=await readPreferences();p.gestureEnabled=Boolean(enabled);const file=path.join(app.getPath('userData'),'preferences.json');await fs.mkdir(path.dirname(file),{recursive:true});await fs.writeFile(file,JSON.stringify(p,null,2));if(p.gestureEnabled){if(!overlay||overlay.isDestroyed())createOverlay();startGlobalHook()}else stopGlobalHook();return p.gestureEnabled});
+ ipcMain.handle('startup:get',()=>Boolean(app.getLoginItemSettings().openAtLogin));
+ ipcMain.handle('startup:set',(_,enabled)=>{app.setLoginItemSettings({openAtLogin:Boolean(enabled),path:process.execPath});return Boolean(enabled)});
  ipcMain.handle('preferences:save',async(_,settings)=>{const file=path.join(app.getPath('userData'),'preferences.json');await fs.mkdir(path.dirname(file),{recursive:true});await fs.writeFile(file,JSON.stringify(settings,null,2));if(overlay&&!overlay.isDestroyed())overlay.webContents.send('preferences:changed',settings);return true});
  ipcMain.handle('history:load',async()=>{try{return JSON.parse(await fs.readFile(path.join(app.getPath('userData'),'history.json'),'utf8'))}catch{return []}});
  ipcMain.handle('history:save',async(_,items)=>{const file=path.join(app.getPath('userData'),'history.json');await fs.mkdir(path.dirname(file),{recursive:true});await fs.writeFile(file,JSON.stringify(items.slice(0,100),null,2));return true});
@@ -80,7 +87,7 @@ app.whenReady().then(async()=>{
  ipcMain.on('overlay:convert',async(_,payload)=>{try{const result=await convertFile(payload);if(win)win.webContents.send('overlay:result',{ok:true,...result});hideOverlay()}catch(e){if(win)win.webContents.send('overlay:result',{ok:false,error:e.message});}});
  ipcMain.on('overlay:close',hideOverlay);
  for(const cfg of await readWatchConfigs()){try{startFolderWatcher(cfg)}catch(err){console.warn('Could not restore watch folder:',err.message)}}
- createWindow();createOverlay();startGlobalHook();
+ createWindow();createOverlay();if((await readPreferences()).gestureEnabled)startGlobalHook();
  app.on('activate',()=>{if(BrowserWindow.getAllWindows().length===0)createWindow()});
 });
 app.on('will-quit',()=>{try{hook?.stop()}catch{}for(const w of watchers.values())w.close();watchers.clear()});
