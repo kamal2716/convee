@@ -68,8 +68,8 @@ app.whenReady().then(async()=>{
    add(key,['/v','MUIVerb','/d','Convert with Convee','/f']);
    add(key,['/v','Icon','/d',exe+',0','/f']);
    add(key,['/v','MultiSelectModel','/d','Player','/f']);
-   add(commandKey,['/ve','/d','"'+exe+'" --convee-context "%*"','/f']);
-  }else{const r=spawnSync('reg.exe',['delete',key,'/f'],{encoding:'utf8',windowsHide:true});if(r.status!==0&& !/unable to find/i.test(r.stderr||''))throw new Error((r.stderr||r.stdout||'Could not remove context menu').trim())}
+   try{add(commandKey,['/ve','/d','"'+exe+'" --convee-context %*','/f'])}catch(error){spawnSync('reg.exe',['delete',key,'/f'],{windowsHide:true});throw error}
+  }else{const r=spawnSync('reg.exe',['delete',key,'/f'],{encoding:'utf8',windowsHide:true});if(r.status!==0&&!/unable to find|cannot find/i.test((r.stderr||'')+' '+(r.stdout||'')))throw new Error((r.stderr||r.stdout||'Could not remove context menu').trim())}
   const p=await readPreferences();p.contextMenuEnabled=Boolean(enabled);const file=path.join(app.getPath('userData'),'preferences.json');await fs.mkdir(path.dirname(file),{recursive:true});await fs.writeFile(file,JSON.stringify(p,null,2));return Boolean(enabled)
  });
  ipcMain.handle('gesture:set',async(_,enabled)=>{const p=await readPreferences();p.gestureEnabled=Boolean(enabled);const file=path.join(app.getPath('userData'),'preferences.json');await fs.mkdir(path.dirname(file),{recursive:true});await fs.writeFile(file,JSON.stringify(p,null,2));if(p.gestureEnabled){if(!overlay||overlay.isDestroyed())createOverlay();startGlobalHook()}else stopGlobalHook();return p.gestureEnabled});
