@@ -2,6 +2,7 @@ const $=s=>document.querySelector(s);
 let dropped=[],formats=[],inspectedKey='',dragActive=false;
 function close(){window.convee.overlayClose()}
 $('#quit').onclick=close;
+window.convee.onContextFiles(files=>{dropped=(files||[]).filter(Boolean);inspectedKey='';formats=[];if(!dropped.length)return;inspectPaths(dropped)});
 window.convee.onOverlayState(s=>{if(!s.active){dropped=[];formats=[];inspectedKey='';dragActive=false;$('#slices').innerHTML='';$('#hint').textContent='Hold Ctrl and drag a file'}});
 function render(){
  const host=$('#slices');host.innerHTML='';
@@ -17,8 +18,8 @@ function render(){
   b.onclick=()=>convert(f.ext);host.appendChild(b);
  });
 }
-async function inspectDraggedFiles(dt){
- const paths=[...(dt?.files||[])].map(f=>f.path).filter(Boolean);
+async function inspectPaths(paths){
+ paths=(paths||[]).filter(Boolean);
  if(!paths.length)return;
  const key=paths.join('|');
  if(key===inspectedKey)return;
@@ -30,6 +31,7 @@ async function inspectDraggedFiles(dt){
   render();$('#hint').textContent=paths.length+' file(s) · release on a format or choose one';
  }catch(error){$('#hint').textContent='Could not read file: '+error.message}
 }
+async function inspectDraggedFiles(dt){const paths=[...(dt?.files||[])].map(f=>f.path).filter(Boolean);if(paths.length)await inspectPaths(paths)}
 for(const ev of ['dragenter','dragover'])document.addEventListener(ev,e=>{
  e.preventDefault();dragActive=true;$('#shell').classList.add('over');
  inspectDraggedFiles(e.dataTransfer);
