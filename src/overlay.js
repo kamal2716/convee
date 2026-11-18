@@ -50,8 +50,10 @@ async function convert(ext){
  const results=await Promise.allSettled(chosen.map(input=>window.convee.convertFromOverlay({input,format:ext})));
  const ok=results.filter(x=>x.status==='fulfilled').length;
  const failed=results.length-ok;
- $('#hint').textContent=ok+' converted'+(failed?' · '+failed+' failed':'')+' · saved beside originals';
- if(failed){$('#shell').classList.remove('busy');return}
+ dropped=chosen.filter((_,index)=>results[index].status==='rejected');
+ $('#hint').textContent=ok+' converted'+(failed?' · '+failed+' failed · retry available':' · saved beside originals');
+ if(ok)window.convee.notify({title:'Convee conversion complete',body:ok+' file(s) converted to .'+ext.toUpperCase()});
+ if(failed){inspectedKey='';formats=[];$('#shell').classList.remove('busy');return}
  setTimeout(close,1300);
 }
 
