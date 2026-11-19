@@ -75,12 +75,15 @@ The Windows package workflow unpacks these runtime binaries from Electron ASAR. 
 | Assimp / Blender | 3D models |
 | FontForge | Font conversion |
 
-## Primary interaction and file access\n\nConvee does not require users to import files into its main window. The global gesture is opt-in from Settings. When enabled, Convee observes the Ctrl + mouse gesture so it can reveal the donut; the file itself is only received when the user drags it over the donut. This is not blanket access to the user's disk. On Windows, the user grants access to the particular file by selecting and dragging it; the gesture itself must first be enabled in Settings. Convee does not recursively inspect personal folders. Global input monitoring is a separate capability and can require operating-system permission on macOS or Linux desktop environments. If the hook cannot start, Settings reports that the gesture could not be enabled.\n\n## Desktop features
+## Primary interaction and file access
+
+Convee does not require users to import files into its main window. The global gesture is opt-in from Settings. When enabled, Convee observes the Ctrl + mouse gesture so it can reveal the donut; the file itself is only received when the user drags it over the donut. This is not blanket access to the user's disk. On Windows, the user grants access to the particular file by selecting and dragging it; the gesture itself must first be enabled in Settings. Convee does not recursively inspect personal folders. Global input monitoring is a separate capability and can require operating-system permission on macOS or Linux desktop environments. If the hook cannot start, Settings reports that the gesture could not be enabled.\n\n## Desktop features
 
 - Global Ctrl + left-drag gesture from File Explorer to summon a floating conversion donut; available formats appear as the selected file is dragged over the wheel.
 - The donut can convert directly when a file is released on a format, or after release when the user selects a format.
 - The main window is a secondary control centre for preferences, history and advanced tools; closing it minimizes Convee so the global gesture can remain available.
 - Optional launch-at-sign-in and explicit enable/disable control for the global gesture.
+- Optional per-user Windows Explorer context menu (`Convert with Convee`) with an uninstall cleanup hook.
 - Batch conversion and recent conversion history.
 - Visual drag-to-select image crop and export.
 - PDF merge, split, page extraction, clockwise page rotation and page numbering.
@@ -123,10 +126,6 @@ GitHub Actions can package Windows NSIS and portable builds automatically. The v
 ## Appearance customization
 
 Convee opens with a navy, cream and coral palette. Settings include full-spectrum colour pickers, RGB/hex entry, live preview, donut opacity and cream/navy themes. Preferences are saved in the app's local user-data folder.
-
-## License
-
-MIT.
 
 ## Additional desktop tools
 
