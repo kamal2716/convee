@@ -8,7 +8,7 @@ function planConversion(from,to,status=detectEngines()){
  const fromCategories=categoriesFor(String(from).toLowerCase(),source.category),toCategories=categoriesFor(String(to).toLowerCase(),target.category);
  const candidates=engineRoutes.filter(r=>r.from.some(x=>fromCategories.includes(x))&&r.to.some(x=>toCategories.includes(x))&&r.extensions(from,to));
  const supports=(route)=> {
-  if(route.engine==='sharp')return Boolean(status.sharp?.readable?.[from]&&status.sharp?.writable?.[to]);
+  if(route.engine==='sharp'){const supported=new Set(['jpg','jpeg','png','webp','avif','tiff']);return supported.has(String(from).toLowerCase())&&supported.has(String(to).toLowerCase())&&Boolean(status.sharp?.available);}
   if(route.engine==='imagemagick')return Boolean(status.imagemagick?.available&&status.imagemagick.readable?.[from]&&status.imagemagick.writable?.[to]);
   return true;
  };
