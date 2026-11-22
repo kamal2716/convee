@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, shell, Menu, screen } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, Menu, screen, Tray } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs/promises');
 const { spawnSync } = require('node:child_process');
@@ -13,7 +13,7 @@ async function readWatchConfigs(){try{return JSON.parse(await fs.readFile(watchC
 async function writeWatchConfigs(items){await fs.mkdir(path.dirname(watchConfigPath()),{recursive:true});await fs.writeFile(watchConfigPath(),JSON.stringify(items,null,2))}
 function startFolderWatcher(cfg){const id=cfg.id||cfg.folder;if(watchers.has(id))watchers.get(id).close();const watcher=chokidar.watch(cfg.folder,{ignoreInitial:true,awaitWriteFinish:{stabilityThreshold:1200,pollInterval:150},ignored:p=>p.includes('.convee-')||p.includes('-converted.')});watcher.on('add',async file=>{if(!cfg.format||path.extname(file).slice(1).toLowerCase()===cfg.format)return;try{await convertFile({input:file,format:cfg.format,outputDir:cfg.outputDir||cfg.folder})}catch(err){console.warn('Watch conversion:',err.message)}});watchers.set(id,watcher);return id}
 
-let win, overlay, hook, modifierDown=false, mouseDown=false, isQuitting=false;
+let win, overlay, hook, tray, modifierDown=false, mouseDown=false, isQuitting=false;
 const singleInstanceLock=app.requestSingleInstanceLock();
 function contextFilesFromArgs(args){const i=args.indexOf('--convee-context');return i<0?[]:args.slice(i+1).filter(x=>x&&!x.startsWith('--')).map(x=>path.resolve(x)).slice(0,20)}
 function openContextFiles(files){if(!files.length)return;if(!overlay||overlay.isDestroyed())createOverlay();showOverlay();const send=()=>{if(overlay&&!overlay.isDestroyed())overlay.webContents.send('overlay:files',files)};if(overlay.webContents.isLoading())overlay.webContents.once('did-finish-load',send);else send();if(win&&!win.isDestroyed())win.show();}
@@ -21,10 +21,20 @@ const modifierCodes=process.platform==='darwin'?[56,3640]:[29,3613];
 const isModifier=code=>modifierCodes.includes(code);
 const isWin=process.platform==='win32';
 function hasTool(name){const cmd=isWin?'where':process.platform==='darwin'?'which':'which';return spawnSync(cmd,[name],{stdio:'ignore'}).status===0}
+function showMainWindow(){if(!win||win.isDestroyed())createWindow();if(win.isMinimized())win.restore();win.show();win.focus()}
+function createTray(){
+ if(tray)return;
+ app.getFileIcon(process.execPath,{size:'small'}).then(icon=>{
+  if(tray||icon.isEmpty())return;
+  tray=new Tray(icon);tray.setToolTip('Convee is running');
+  const menu=Menu.buildFromTemplate([{label:'Open Convee',click:showMainWindow},{type:'separator'},{label:'Quit Convee',click:()=>app.quit()}]);
+  tray.setContextMenu(menu);tray.on('click',showMainWindow);tray.on('double-click',showMainWindow);
+ }).catch(error=>console.warn('Could not create system tray icon:',error.message));
+}
 function createWindow(){
  win=new BrowserWindow({width:1180,height:820,minWidth:850,minHeight:620,backgroundColor:'#080a0f',title:'convee',titleBarStyle:process.platform==='darwin'?'hiddenInset':'default',webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true,nodeIntegration:false,sandbox:true}});
  win.loadFile(path.join(__dirname,'index.html'));
- win.on('close',event=>{if(!isQuitting){event.preventDefault();win.minimize()}});
+ win.on('close',event=>{if(!isQuitting){event.preventDefault();win.hide()}});
  Menu.setApplicationMenu(Menu.buildFromTemplate([{label:'File',submenu:[{label:'Open Downloads',click:()=>shell.openPath(app.getPath('downloads'))},{type:'separator'},{label:'Quit Convee',click:()=>app.quit()}]},{label:'Edit',submenu:[{role:'copy'},{role:'paste'},{role:'selectAll'}]},{label:'View',submenu:[{role:'reload'},{role:'toggleDevTools'},{type:'separator'},{role:'resetZoom'},{role:'zoomIn'},{role:'zoomOut'}]}]));
 }
 function createOverlay(){
@@ -107,9 +117,9 @@ app.whenReady().then(async()=>{
  ipcMain.on('overlay:convert',async(_,payload)=>{try{const result=await convertFile(payload);if(win)win.webContents.send('overlay:result',{ok:true,...result});hideOverlay()}catch(e){if(win)win.webContents.send('overlay:result',{ok:false,error:e.message});}});
  ipcMain.on('overlay:close',hideOverlay);
  for(const cfg of await readWatchConfigs()){try{startFolderWatcher(cfg)}catch(err){console.warn('Could not restore watch folder:',err.message)}}
- createWindow();createOverlay();if((await readPreferences()).gestureEnabled)startGlobalHook();const initialContextFiles=contextFilesFromArgs(process.argv);if(initialContextFiles.length)openContextFiles(initialContextFiles);
+ createWindow();createTray();createOverlay();if((await readPreferences()).gestureEnabled)startGlobalHook();const initialContextFiles=contextFilesFromArgs(process.argv);if(initialContextFiles.length)openContextFiles(initialContextFiles);
  app.on('activate',()=>{if(BrowserWindow.getAllWindows().length===0)createWindow()});
 });
 app.on('before-quit',()=>{isQuitting=true});
-app.on('will-quit',()=>{try{hook?.stop()}catch{}for(const w of watchers.values())w.close();watchers.clear()});
-app.on('window-all-closed',()=>{if(process.platform!=='darwin')app.quit()});
+app.on('will-quit',()=>{try{hook?.stop()}catch{}for(const w of watchers.values())w.close();watchers.clear();if(tray&&!tray.isDestroyed())tray.destroy();tray=null});
+app.on('window-all-closed',()=>{});
