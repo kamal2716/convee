@@ -7,7 +7,7 @@ window.convee.onOverlayState(s=>{if(!s.active){dropped=[];formats=[];inspectedKe
 function render(){
  const host=$('#slices');host.innerHTML='';
  const usable=formats.filter(x=>x.ready).slice(0,8);
- if(!usable.length){$('#hint').textContent=dropped.length?'No supported conversions for this file':'Drag a file here';return}
+ if(!usable.length){$('#hint').textContent=dropped.length?'No conversion route is available for this file on this PC':'Drag a file here';return}
  const center=180,r=130;
  usable.forEach((f,i)=>{
   const angle=(-Math.PI/2)+(i/usable.length)*Math.PI*2;
@@ -28,10 +28,11 @@ async function inspectPaths(paths){
   const info=await window.convee.inspect(paths);
   const perFile=await Promise.all(info.map(x=>window.convee.formats(x.ext)));
   formats=(perFile[0]||[]).filter(x=>x.ready&&perFile.every(list=>list.some(y=>y.ext===x.ext&&y.ready)));
-  render();$('#hint').textContent=paths.length+' file(s) · release on a format or choose one';
+  render();$('#hint').textContent=formats.length?paths.length+' file(s) · choose a format to convert':'No ready conversion engine for '+paths.length+' selected file(s)';
  }catch(error){$('#hint').textContent='Could not read file: '+error.message}
 }
-async function inspectDraggedFiles(dt){const paths=[...(dt?.files||[])].map(f=>f.path).filter(Boolean);if(paths.length)await inspectPaths(paths)}
+function pathsFromTransfer(dt){const direct=[...(dt?.files||[])];const fromItems=direct.length?direct:[...(dt?.items||[])].filter(item=>item.kind==='file').map(item=>item.getAsFile()).filter(Boolean);return fromItems.map(file=>file.path).filter(Boolean)}
+async function inspectDraggedFiles(dt){const paths=pathsFromTransfer(dt);if(paths.length)await inspectPaths(paths)}
 for(const ev of ['dragenter','dragover'])document.addEventListener(ev,e=>{
  e.preventDefault();dragActive=true;$('#shell').classList.add('over');
  inspectDraggedFiles(e.dataTransfer);
